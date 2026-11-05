@@ -205,6 +205,24 @@ td.null{color:var(--muted);font-style:italic}
 details summary{cursor:pointer;font-weight:700}
 .st-ok{color:var(--ok);font-weight:700}.st-help{color:var(--warn);font-weight:700}.st-no{color:var(--muted)}
 .loading{padding:40px;text-align:center;color:var(--muted)}
+.acctbar{max-width:1240px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:flex-end;font-size:.86rem;color:var(--muted)}
+.acctbar .who{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;min-width:0}
+.acctbar .who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:14rem}
+.acctbar .av{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:.78rem;font-weight:700;overflow:hidden;flex:none}
+.acctbar .av img{width:100%;height:100%;object-fit:cover}
+.acctbar .sync{font-family:var(--f-mono);font-size:.74rem}
+.acctbar .sync.err{color:var(--stamp)}
+.gbtn{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font-weight:700;font-size:.88rem}
+.gbtn:hover{border-color:var(--ink)}
+.gbtn svg{width:16px;height:16px;flex:none}
+.loginhint{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:var(--card);border:1px dashed var(--key);border-radius:8px;padding:12px 16px;font-size:.92rem}
+.modal{position:fixed;inset:0;z-index:50;background:color-mix(in srgb, var(--ink) 45%, transparent);display:grid;place-items:center;padding:max(16px, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) max(16px, env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+.modal .box{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;max-width:560px;width:100%;padding:22px;display:flex;flex-direction:column;gap:14px;max-height:100%;overflow:auto}
+.modal h3{font-size:1.35rem}
+.choice{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.choice button{text-align:left;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.choice button:hover{border-color:var(--ink)}
+.choice b{font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
 .credits{max-width:1240px;margin:32px auto 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;font-size:.86rem;color:var(--muted)}
 .credits nav{display:flex;flex-wrap:wrap;gap:8px 18px}
 .credits a{color:var(--ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
@@ -226,9 +244,15 @@ details summary{cursor:pointer;font-weight:700}
 </style>
 </head>
 <body>
+<div class="acctbar" id="acct" hidden></div>
 <div class="wrap" id="app"><div class="loading">Menyiapkan database penyelidikan…</div></div>
 <footer class="credits" id="credits"></footer>
+<div class="modal" id="modal" hidden></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-asm.js"></script>
 <script>
 /* ===================== TAUTAN PEMBUAT =====================
@@ -1708,7 +1732,7 @@ let last=null;
 function newState(){ return {screen:'cover', lvl:0, startedAt:null, finishedAt:null, mapOpen:true,
   stats:LEVELS.map(()=>({attempts:0,mistakes:0,hints:0,revealed:false,solved:false,ms:0,firstTry:false,picked:[]})),
   mistakes:[], drafts:{}, lvlStart:null }; }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function save(){ S.savedAt=Date.now(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} cloudQueue(); }
 function load(){ try{ const t=localStorage.getItem(KEY); const d=t?JSON.parse(t):null; return d && d.stats && d.stats.length===LEVELS.length ? d : null; }catch(e){ return null; } }
 
 /* ===================== SQL ===================== */
@@ -1915,7 +1939,9 @@ function renderCover(){
       </ol>
     </aside>
   </section>
+  ${CLOUD.on && !CLOUD.user ? `<div class="loginhint"><span><b>Ingin melanjutkan di perangkat lain?</b> Masuk dengan Google, dan progres, catatan kesalahan, serta evaluasimu tersimpan di akun.</span><button class="gbtn" id="loginCover">${G_ICON}Masuk dengan Google</button></div>`:''}
   ${promoHTML()}`;
+  const lc=document.getElementById('loginCover'); if(lc) lc.onclick=login;
   document.getElementById('start').onclick=startGame;
   const rs=document.getElementById('resume'); if(rs) rs.onclick=()=>{ S=saved; S.review=null; if(S.screen==='sandbox') S.screen='game'; S.lvlStart=Date.now(); last=null; render(); };
   document.getElementById('sbxCover').onclick=()=>{ if(saved && !canResume){} openSandbox(); };
@@ -2233,7 +2259,127 @@ function renderEval(){
   };
 }
 
+/* ===================== AKUN & SIMPAN KE CLOUD =====================
+   Aktif hanya jika firebase-config.js dan Firebase SDK dimuat (versi Netlify).
+   Progres disimpan di Firestore: users/{uid}/games/kasus-kopi-hilang */
+const CLOUD = {on:false, user:null, db:null, ref:null, timer:null, status:'', err:false, ready:false, conflict:null};
+const GAME_DOC = 'kasus-kopi-hilang';
+const G_ICON = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+const solvedOf = st => st && st.stats ? st.stats.filter(x=>x.solved).length : 0;
+const hasProgress = st => !!(st && st.stats && st.stats.length===LEVELS.length && (solvedOf(st)>0 || st.mistakes.length>0));
+const fmtClock = t => t ? new Date(t).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '–';
+
+function cloudInit(){
+  const cfg = window.FIREBASE_CONFIG;
+  if(!(window.firebase && cfg && cfg.apiKey)) return;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(cfg);
+    CLOUD.on=true; CLOUD.db=firebase.firestore();
+    firebase.auth().getRedirectResult().catch(e=>{ CLOUD.status='Gagal masuk: '+authMsg(e); CLOUD.err=true; renderAcct(); });
+    firebase.auth().onAuthStateChanged(onAuth);
+    renderAcct();
+  }catch(e){ CLOUD.on=false; }
+}
+function authMsg(e){
+  const c=(e&&e.code)||'';
+  if(c.includes('unauthorized-domain')) return 'domain situs ini belum didaftarkan di Firebase (Authentication → Settings → Authorized domains).';
+  if(c.includes('popup-closed')||c.includes('cancelled-popup')) return 'jendela login ditutup sebelum selesai.';
+  if(c.includes('network')) return 'koneksi internet bermasalah.';
+  if(c.includes('permission-denied')) return 'akses ditolak oleh aturan Firestore. Periksa firestore.rules.';
+  return (e&&e.message)||'terjadi kesalahan.';
+}
+function login(){
+  const prov=new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(prov).catch(e=>{
+    const c=(e&&e.code)||'';
+    if(c.includes('popup-blocked')||c.includes('operation-not-supported')) return firebase.auth().signInWithRedirect(prov);
+    if(!c.includes('popup-closed') && !c.includes('cancelled-popup')){ CLOUD.status='Gagal masuk: '+authMsg(e); CLOUD.err=true; renderAcct(); }
+  });
+}
+async function logout(){
+  await cloudFlush();
+  await firebase.auth().signOut();
+  S=newState(); last=null; try{ localStorage.removeItem(KEY); }catch(e){}
+  render();
+}
+async function onAuth(user){
+  CLOUD.user=user; CLOUD.ready=false; CLOUD.conflict=null; CLOUD.err=false;
+  if(!user){ CLOUD.ref=null; CLOUD.status=''; renderAcct(); render(); return; }
+  CLOUD.ref=CLOUD.db.collection('users').doc(user.uid).collection('games').doc(GAME_DOC);
+  CLOUD.status='Memuat progres…'; renderAcct();
+  try{
+    const snap=await CLOUD.ref.get();
+    let remote=null;
+    if(snap.exists){ try{ remote=JSON.parse(snap.data().state); }catch(e){} }
+    if(remote && remote.stats && remote.stats.length!==LEVELS.length) remote=null;
+    const local = hasProgress(S) ? S : load();
+    const lp=hasProgress(local), rp=hasProgress(remote);
+    if(rp && lp && remote.savedAt!==local.savedAt){ CLOUD.conflict={remote, local}; CLOUD.status='Pilih progres yang dipakai'; renderAcct(); renderModal(); return; }
+    if(rp) adopt(remote);
+    else if(lp){ S=local; }
+    CLOUD.ready=true;
+    if(lp && !rp) await cloudWrite(); else { CLOUD.status='Tersimpan di akun · '+fmtClock(S.savedAt||Date.now()); }
+    renderAcct(); render();
+  }catch(e){ CLOUD.status='Gagal memuat: '+authMsg(e); CLOUD.err=true; renderAcct(); }
+}
+function adopt(st){ S=st; S.review=null; if(S.screen==='sandbox') S.screen=S.prevScreen||'game'; last=null; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function resolveConflict(useRemote){
+  const c=CLOUD.conflict; if(!c) return;
+  if(useRemote) adopt(c.remote); else S=c.local;
+  CLOUD.conflict=null; CLOUD.ready=true; document.getElementById('modal').hidden=true;
+  render(); if(!useRemote) cloudWrite(); else { CLOUD.status='Tersimpan di akun · '+fmtClock(S.savedAt); renderAcct(); }
+}
+function cloudQueue(){
+  if(!CLOUD.on || !CLOUD.user || !CLOUD.ready) return;
+  clearTimeout(CLOUD.timer); CLOUD.status='Menyimpan…'; CLOUD.err=false; renderAcctStatus();
+  CLOUD.timer=setTimeout(cloudWrite, 1500);
+}
+async function cloudWrite(){
+  clearTimeout(CLOUD.timer); CLOUD.timer=null;
+  if(!CLOUD.ref || !CLOUD.ready) return;
+  try{
+    await CLOUD.ref.set({ state: JSON.stringify(S), savedAt: S.savedAt||Date.now(), solved: solvedCount(), total: LEVELS.length,
+      updated: firebase.firestore.FieldValue.serverTimestamp() });
+    CLOUD.status='Tersimpan di akun · '+fmtClock(S.savedAt||Date.now()); CLOUD.err=false;
+  }catch(e){ CLOUD.status='Belum tersimpan ke akun: '+authMsg(e)+' Progres tetap aman di perangkat ini.'; CLOUD.err=true; }
+  renderAcctStatus();
+}
+async function cloudFlush(){ if(CLOUD.timer) await cloudWrite(); }
+function renderAcctStatus(){ const el=document.getElementById('sync'); if(el){ el.textContent=CLOUD.status; el.className='sync'+(CLOUD.err?' err':''); } }
+function renderAcct(){
+  const bar=document.getElementById('acct'); if(!bar) return;
+  if(!CLOUD.on){ bar.hidden=true; return; }
+  bar.hidden=false;
+  const u=CLOUD.user;
+  if(!u){ bar.innerHTML=`<span class="sync${CLOUD.err?' err':''}" id="sync">${esc(CLOUD.status||'Progres hanya tersimpan di perangkat ini')}</span><button class="gbtn" id="loginBtn">${G_ICON}Masuk dengan Google</button>`; }
+  else {
+    const nm=u.displayName||u.email||'Akun'; const ini=esc(nm.trim().charAt(0).toUpperCase());
+    bar.innerHTML=`<span class="sync${CLOUD.err?' err':''}" id="sync">${esc(CLOUD.status)}</span>
+      <span class="who"><span class="av">${u.photoURL?`<img src="${esc(u.photoURL)}" alt="" referrerpolicy="no-referrer">`:ini}</span><span>${esc(nm)}</span></span>
+      <button class="btn ghost sm" id="logoutBtn">Keluar</button>`;
+  }
+  const lb=document.getElementById('loginBtn'); if(lb) lb.onclick=login;
+  const ob=document.getElementById('logoutBtn'); if(ob) ob.onclick=logout;
+}
+function renderModal(){
+  const m=document.getElementById('modal'); const c=CLOUD.conflict; if(!m) return;
+  if(!c){ m.hidden=true; return; }
+  m.hidden=false;
+  m.innerHTML=`<div class="box" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <h3 id="mt">Ada dua progres berbeda</h3>
+    <p>Akunmu sudah punya progres, dan perangkat ini juga menyimpan progres lain. Pilih satu untuk dilanjutkan. Yang tidak dipilih akan ditimpa.</p>
+    <div class="choice">
+      <button id="useRemote"><span class="label">Progres di akun</span><b>${solvedOf(c.remote)}/${LEVELS.length}</b><span class="target">${c.remote.mistakes.filter(x=>!x.review).length} kesalahan · disimpan ${fmtClock(c.remote.savedAt)}</span></button>
+      <button id="useLocal"><span class="label">Progres di perangkat ini</span><b>${solvedOf(c.local)}/${LEVELS.length}</b><span class="target">${c.local.mistakes.filter(x=>!x.review).length} kesalahan · disimpan ${fmtClock(c.local.savedAt)}</span></button>
+    </div></div>`;
+  document.getElementById('useRemote').onclick=()=>resolveConflict(true);
+  document.getElementById('useLocal').onclick=()=>resolveConflict(false);
+  document.getElementById('useRemote').focus();
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') cloudFlush(); });
+
 function render(justRan){
+  renderAcct();
   renderCredits();
   if(S.screen==='cover') renderCover();
   else if(S.screen==='game') renderGame(justRan);
@@ -2247,7 +2393,7 @@ function boot(data){
   if(data && data.screen && data.stats && data.stats.length===LEVELS.length) S=data;
   if(typeof initSqlJs!=='function'){ app().innerHTML='<div class="loading">Mesin SQL gagal dimuat. Muat ulang halaman ini.</div>'; return; }
   initSqlJs().then(lib=>{
-    SQL=lib;
+    SQL=lib; cloudInit();
     EXP=LEVELS.map(L=>{ const t=L.type||'query'; if(t==='quiz'||t==='error') return null; const r=exec(L.solution,L); return (t==='dml'||t==='ddl') ? r.checks : r.res; });
     render();
   }).catch(()=>{ app().innerHTML='<div class="loading">Mesin SQL gagal dimuat. Muat ulang halaman ini.</div>'; });
