@@ -7,7 +7,9 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ECEFE6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12181A" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://belajarsql.netlify.app/">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://belajarsql.netlify.app/">
 <meta property="og:title" content="Kasus Kopi Hilang · Belajar SQL lewat kasus detektif">
 <meta property="og:description" content="Game detektif interaktif untuk belajar database dan SQL dari nol: 110 level, dari primary key dan normalisasi sampai JOIN, transaksi, dan window function. Gratis, langsung di browser.">
 <meta name="twitter:card" content="summary">
@@ -223,7 +225,17 @@ details summary{cursor:pointer;font-weight:700}
 .choice button{text-align:left;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
 .choice button:hover{border-color:var(--ink)}
 .choice b{font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
-.credits{max-width:1240px;margin:32px auto 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;font-size:.86rem;color:var(--muted)}
+.credits{max-width:1240px;margin:32px auto 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px;font-size:.86rem;color:var(--muted)}
+.xg-row{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between}
+.credits a.xgame{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 16px;border:1.5px solid var(--ink);border-radius:10px;background:var(--card);text-decoration:none;color:var(--ink)}
+.credits a.xgame:hover{background:var(--well)}
+.xg-badge{width:44px;height:44px;border-radius:8px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--f-mono);font-weight:600;font-size:1rem}
+.xg-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.xg-k{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--stamp);font-weight:600}
+.xg-text b{font-family:var(--f-display);font-size:1.15rem}
+.xg-d{color:var(--muted)}
+.xg-go{font-weight:700;white-space:nowrap}
+@media (max-width:560px){.credits a.xgame{grid-template-columns:auto minmax(0,1fr)}.xg-go{grid-column:2}}
 .credits nav{display:flex;flex-wrap:wrap;gap:8px 18px}
 .credits a{color:var(--ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .credits a:hover{text-decoration-color:var(--stamp)}
@@ -258,6 +270,7 @@ details summary{cursor:pointer;font-weight:700}
 /* ===================== TAUTAN PEMBUAT =====================
    Isi alamat lengkap (https://…). Tautan yang kosong otomatis disembunyikan. */
 const LINKS = {
+  site:     'https://belajarsql.netlify.app/',
   saweria:  '',
   pynoir:   '',
   linkedin: 'https://www.linkedin.com/in/ilhamalifianf',
@@ -270,9 +283,14 @@ const LINK_INFO = [
 const activeLinks = () => LINK_INFO.filter(l => /^https?:\/\//.test(LINKS[l.key]||''));
 function renderCredits(){
   const f=document.getElementById('credits'); if(!f) return;
-  const ls=activeLinks();
-  f.innerHTML = `<span>Kasus Kopi Hilang · dibuat oleh Ilham. Semua nama dan data dalam game ini fiktif.</span>
-    ${ls.length?`<nav aria-label="Tautan pembuat">${ls.map(l=>`<a href="${esc(LINKS[l.key])}" target="_blank" rel="noopener">${esc(l.t)}</a>`).join('')}</nav>`:''}`;
+  const ls=activeLinks().filter(l=>l.key!=='pynoir');
+  const py=/^https?:\/\//.test(LINKS.pynoir||'');
+  f.innerHTML = `${py?`<a class="xgame" href="${esc(LINKS.pynoir)}" target="_blank" rel="noopener">
+      <span class="xg-badge" aria-hidden="true">Py</span>
+      <span class="xg-text"><span class="xg-k">Game lain dari pembuat yang sama</span><b>PyNoir</b><span class="xg-d">Belajar Python lewat kasus detektif. Satu akun Google untuk kedua game.</span></span>
+      <span class="xg-go">Main PyNoir ↗</span></a>`:''}
+    <div class="xg-row"><span>Kasus Kopi Hilang · dibuat oleh Ilham. Semua nama dan data dalam game ini fiktif.</span>
+    ${ls.length?`<nav aria-label="Tautan pembuat">${ls.map(l=>`<a href="${esc(LINKS[l.key])}" target="_blank" rel="noopener">${esc(l.t)}</a>`).join('')}</nav>`:''}</div>`;
 }
 const promoHTML = () => { const ls=activeLinks(); return ls.length ? `<section class="promo" aria-label="Tautan pembuat">${ls.map(l=>`<a href="${esc(LINKS[l.key])}" target="_blank" rel="noopener"><span class="k">${esc(l.k)}</span><b>${esc(l.t)}</b><span class="d">${esc(l.d)}</span><span class="go">${esc(l.go)} ↗</span></a>`).join('')}</section>` : ''; };
 
