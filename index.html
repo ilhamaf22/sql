@@ -1,0 +1,2258 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Game detektif interaktif untuk belajar database dan SQL dari nol: 110 level, dari primary key dan normalisasi sampai JOIN, transaksi, dan window function. Gratis, langsung di browser.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ECEFE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12181A" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kasus Kopi Hilang · Belajar SQL lewat kasus detektif">
+<meta property="og:description" content="Game detektif interaktif untuk belajar database dan SQL dari nol: 110 level, dari primary key dan normalisasi sampai JOIN, transaksi, dan window function. Gratis, langsung di browser.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231D2939'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='26' font-weight='700' fill='%23ECEFE6' text-anchor='middle'%3ESQL%3C/text%3E%3C/svg%3E">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Kasus Kopi Hilang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Zilla+Slab:wght@500;600;700&display=swap">
+<style>
+/* Layout: berkas kasus — peta materi per bab di atas, map arsip di kiri (cerita, tugas, konsep), meja kerja di kanan (kuis/editor, hasil, ERD), buku catatan kesalahan di bawah */
+:root{
+  --paper:#ECEFE6; --card:#F8F9F4; --well:#E2E6DA; --ink:#1D2939; --muted:#5B6862; --line:#C9D0C1;
+  --stamp:#B2352B; --stamp-soft:#F3DCD7; --ok:#2C7A4C; --ok-soft:#DCEEDF; --warn:#9A6210; --warn-soft:#F4E7CF;
+  --tab:#D8DECD; --key:#2F5D8A;
+  --f-display:"Zilla Slab", "Rockwell", Georgia, serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#12181A; --card:#1A2225; --well:#0F1416; --ink:#E3E8DE; --muted:#97A39D; --line:#2D383B;
+  --stamp:#E56A5E; --stamp-soft:#3A2220; --ok:#62C08B; --ok-soft:#1C3326; --warn:#DDA748; --warn-soft:#352A16;
+  --tab:#232D30; --key:#7FB0DF; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#12181A; --card:#1A2225; --well:#0F1416; --ink:#E3E8DE; --muted:#97A39D; --line:#2D383B;
+  --stamp:#E56A5E; --stamp-soft:#3A2220; --ok:#62C08B; --ok-soft:#1C3326; --warn:#DDA748; --warn-soft:#352A16;
+  --tab:#232D30; --key:#7FB0DF; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+button{font:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+.label{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+.btn{border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{filter:brightness(1.15)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--well);filter:none}
+.btn.red{background:var(--stamp);border-color:var(--stamp);color:#fff}
+.btn.sm{padding:6px 12px;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.kbd{font-family:var(--f-mono);font-size:.72rem;opacity:.75;border:1px solid currentColor;border-radius:4px;padding:0 5px}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.top h1{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:700}
+.top .case-no{font-family:var(--f-mono);font-size:.8rem;color:var(--stamp);font-weight:600;letter-spacing:.06em}
+.top .meta{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+.top .meta b{color:var(--ink)}
+
+.map{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.map summary{font-weight:700}
+.map summary span{font-weight:400;color:var(--muted);font-size:.88rem;margin-left:8px}
+.chapters{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px 20px;margin-top:14px}
+.ch{min-width:0;display:flex;flex-direction:column;gap:6px}
+.ch .t{font-family:var(--f-display);font-weight:600;font-size:1rem;display:flex;gap:8px;align-items:baseline}
+.ch .t .no{font-family:var(--f-mono);font-size:.74rem;color:var(--stamp)}
+.ch .t .pc{margin-left:auto;font-family:var(--f-mono);font-size:.72rem;color:var(--muted);font-weight:400}
+.dots{display:flex;flex-wrap:wrap;gap:4px}
+.dot{width:30px;height:26px;border-radius:4px;border:1.5px solid var(--line);background:var(--paper);font-family:var(--f-mono);font-size:.72rem;color:var(--muted);padding:0}
+.dot:hover{border-color:var(--ink);color:var(--ink)}
+.dot.done{background:var(--ok);border-color:var(--ok);color:#fff}
+.dot.helped{background:var(--warn);border-color:var(--warn);color:#fff}
+.dot.tried{border-color:var(--stamp);color:var(--stamp)}
+.dot.now{outline:2.5px solid var(--ink);outline-offset:1px;color:var(--ink)}
+.dot.now.done,.dot.now.helped{color:#fff}
+
+.game{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+@media (max-width:920px){.game{grid-template-columns:minmax(0,1fr)}}
+
+.folder{position:relative;background:var(--card);border:1px solid var(--line);border-radius:0 8px 8px 8px;padding:22px 22px 20px;margin-top:22px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.folder::before{content:attr(data-tab);position:absolute;left:-1px;top:-24px;height:24px;max-width:calc(100% + 2px);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:3px 14px 0;background:var(--tab);border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--f-mono);font-size:.72rem;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+.folder h2{font-size:1.55rem}
+.folder.solved h2{padding-right:110px}
+.story em{font-style:normal;background:var(--warn-soft);padding:0 3px;border-radius:3px}
+.task{border-left:4px solid var(--stamp);background:var(--stamp-soft);padding:12px 14px;border-radius:0 6px 6px 0}
+.task p{font-weight:700}
+.concept{background:var(--well);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.concept pre{margin:0;font-family:var(--f-mono);font-size:.82rem;white-space:pre;color:var(--ink);overflow-x:auto}
+.hints{display:flex;flex-direction:column;gap:8px}
+.hints:empty{display:none}
+.hint{font-size:.94rem;padding:8px 12px;border:1px dashed var(--warn);border-radius:6px;background:var(--warn-soft)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.stampmark{position:absolute;right:16px;top:16px;font-family:var(--f-display);font-weight:700;font-size:1.05rem;letter-spacing:.08em;color:var(--ok);border:3px solid var(--ok);border-radius:6px;padding:3px 10px;transform:rotate(-8deg);background:var(--card);pointer-events:none}
+.stampmark.helped{color:var(--warn);border-color:var(--warn)}
+.stampmark.anim{animation:thump .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes thump{0%{transform:rotate(-8deg) scale(2.2);opacity:0}100%{transform:rotate(-8deg) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.stampmark.anim{animation:none}}
+
+.desk{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+details.panel{display:block}
+details.panel > * + *{margin-top:12px}
+.erd{overflow-x:auto}
+.erd svg{display:block;width:100%;min-width:640px;height:auto}
+.erd .box{fill:var(--card);stroke:var(--line);stroke-width:1.2}
+.erd .hdr{fill:var(--tab)}
+.erd .tn{font-family:var(--f-mono);font-weight:600;font-size:12.5px;fill:var(--ink)}
+.erd .cn{font-family:var(--f-mono);font-size:11.5px;fill:var(--ink)}
+.erd .pk{font-family:var(--f-mono);font-size:10px;font-weight:600;fill:var(--stamp)}
+.erd .fk{font-family:var(--f-mono);font-size:10px;font-weight:600;fill:var(--key)}
+.erd .rel{fill:none;stroke:var(--muted);stroke-width:1.5}
+.erd .card{font-family:var(--f-mono);font-size:12px;font-weight:600;fill:var(--ink)}
+.legend{font-size:.82rem;color:var(--muted)}
+.legend b.pk{color:var(--stamp)} .legend b.fk{color:var(--key)}
+
+.schema{display:flex;flex-wrap:wrap;gap:8px}
+.tbl{border:1px solid var(--line);border-radius:6px;background:var(--paper);padding:8px 10px;min-width:0;font-size:.82rem}
+.tbl button{border:none;background:none;padding:0;color:var(--ink);font-family:var(--f-mono);font-weight:600;font-size:.85rem;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.tbl button:hover{text-decoration-color:var(--stamp)}
+.cols{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.cols button{font-weight:400;font-size:.76rem;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.cols button:hover{color:var(--ink);border-color:var(--ink)}
+.cols button.k{color:var(--stamp);border-color:var(--stamp)}
+.cols button.f{color:var(--key);border-color:var(--key)}
+textarea{width:100%;min-height:150px;resize:vertical;font-family:var(--f-mono);font-size:.95rem;line-height:1.6;color:var(--ink);background:var(--well);border:1.5px solid var(--line);border-radius:6px;padding:12px 14px;tab-size:2}
+textarea:focus{border-color:var(--ink);outline:none}
+.target{font-size:.85rem;color:var(--muted)}
+.target b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.quiz .q{font-weight:700;font-size:1.08rem}
+.opt{text-align:left;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt .l{font-family:var(--f-mono);font-weight:600;color:var(--muted)}
+.opt.wrong{border-color:var(--stamp);background:var(--stamp-soft)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt:disabled{cursor:default}
+
+.feedback{border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.feedback.bad{background:var(--stamp-soft);border:1px solid var(--stamp)}
+.feedback.good{background:var(--ok-soft);border:1px solid var(--ok)}
+.feedback .head{font-weight:700;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.feedback .cat{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.04em;padding:1px 7px;border-radius:4px;background:var(--stamp);color:#fff}
+.feedback.good .cat{background:var(--ok)}
+.feedback .raw{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);word-break:break-word}
+
+.result{overflow:auto;max-height:320px;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--tab);font-family:var(--f-mono);font-weight:600;font-size:.76rem}
+td.null{color:var(--muted);font-style:italic}
+.empty{padding:14px;color:var(--muted);font-size:.9rem}
+
+.notebook{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.notebook h3{font-size:1.15rem;display:flex;gap:10px;align-items:baseline}
+.notebook h3 .count{font-family:var(--f-mono);font-size:.85rem;color:var(--stamp)}
+.mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+.mlist li{display:grid;grid-template-columns:2.6rem minmax(0,1fr);gap:4px 12px;padding:8px 10px;border-radius:6px;background:var(--paper);font-size:.86rem}
+.mlist .lv{font-family:var(--f-mono);color:var(--stamp);font-weight:600}
+.mlist .q{grid-column:2;font-family:var(--f-mono);font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.cover{background:var(--card);border:1px solid var(--line);border-radius:0 10px 10px 10px;position:relative;margin-top:26px;padding:clamp(22px,5vw,48px);display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:32px}
+.cover::before{content:"BERKAS 07 / KOPERASI BUKIT DUA";position:absolute;left:-1px;top:-26px;height:26px;padding:4px 16px 0;background:var(--tab);border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;font-family:var(--f-mono);font-size:.74rem;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+@media (max-width:820px){.cover{grid-template-columns:minmax(0,1fr)}}
+.cover h2{font-size:clamp(2rem,5vw,3.1rem);font-weight:700}
+.cover .lead{font-size:1.08rem;max-width:60ch}
+.syll{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.syll li{border-top:2px solid var(--line);padding-top:6px;font-size:.88rem;color:var(--muted)}
+.syll li b{display:block;font-family:var(--f-display);font-size:1.02rem;color:var(--ink)}
+.syll li .no{font-family:var(--f-mono);font-size:.72rem;color:var(--stamp)}
+.secret{display:inline-block;font-family:var(--f-display);font-weight:700;letter-spacing:.14em;color:var(--stamp);border:3px solid var(--stamp);padding:2px 12px;transform:rotate(-4deg);border-radius:4px;align-self:flex-start}
+.how{background:var(--paper);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);align-self:start}
+.how ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px}
+
+.eval{display:flex;flex-direction:column;gap:20px}
+.verdict{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:clamp(20px,4vw,36px);display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:center}
+@media (max-width:600px){.verdict{grid-template-columns:minmax(0,1fr)}}
+.grade{font-family:var(--f-display);font-weight:700;font-size:5.5rem;line-height:1;color:var(--stamp);border:5px solid var(--stamp);border-radius:12px;width:8.5rem;height:8.5rem;display:grid;place-items:center;transform:rotate(-5deg)}
+.verdict h2{font-size:clamp(1.6rem,4vw,2.3rem)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.stat .v{font-family:var(--f-display);font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:minmax(0,13rem) minmax(0,1fr) 3rem;gap:10px;align-items:center;font-size:.86rem}
+.bar .track2{height:14px;background:var(--well);border-radius:3px;overflow:hidden}
+.bar .fill{height:100%;background:var(--ink);border-radius:3px}
+.bar.top .fill{background:var(--stamp)}
+.bar .fill.g{background:var(--ok)} .bar .fill.y{background:var(--warn)} .bar .fill.r{background:var(--stamp)}
+.bar .num{font-family:var(--f-mono);text-align:right}
+@media (max-width:480px){.bar{grid-template-columns:minmax(0,1fr) 3rem}.bar .track2{grid-column:1 / -1;grid-row:2}}
+.recs{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:10px}
+details summary{cursor:pointer;font-weight:700}
+.st-ok{color:var(--ok);font-weight:700}.st-help{color:var(--warn);font-weight:700}.st-no{color:var(--muted)}
+.loading{padding:40px;text-align:center;color:var(--muted)}
+.credits{max-width:1240px;margin:32px auto 0;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;font-size:.86rem;color:var(--muted)}
+.credits nav{display:flex;flex-wrap:wrap;gap:8px 18px}
+.credits a{color:var(--ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.credits a:hover{text-decoration-color:var(--stamp)}
+.promo{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.promo a{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);text-decoration:none;min-width:0}
+.promo a:hover{border-color:var(--ink)}
+.promo a:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+.promo .k{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--stamp);font-weight:600}
+.promo b{font-family:var(--f-display);font-size:1.15rem}
+.promo span.d{font-size:.88rem;color:var(--muted)}
+.promo .go{font-size:.85rem;font-weight:700;margin-top:auto}
+.banner{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:var(--warn-soft);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;font-size:.92rem}
+.banner.exam{background:var(--stamp-soft);border-color:var(--stamp)}
+.sol{border-top:1px dashed var(--ok);padding-top:8px;margin-top:4px}
+.sol summary{font-size:.92rem}
+.sol pre{margin:4px 0 8px;font-family:var(--f-mono);font-size:.8rem;white-space:pre-wrap;word-break:break-word;background:var(--card);border-radius:4px;padding:8px 10px}
+.sol .label{display:block;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Menyiapkan database penyelidikan…</div></div>
+<footer class="credits" id="credits"></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-asm.js"></script>
+<script>
+/* ===================== TAUTAN PEMBUAT =====================
+   Isi alamat lengkap (https://…). Tautan yang kosong otomatis disembunyikan. */
+const LINKS = {
+  saweria:  '',
+  pynoir:   '',
+  linkedin: 'https://www.linkedin.com/in/ilhamalifianf',
+};
+const LINK_INFO = [
+  {key:'pynoir',   k:'Game lain',    t:'PyNoir',           d:'Belajar Python lewat kasus detektif, dari dasar sampai mahir.', go:'Main PyNoir'},
+  {key:'saweria',  k:'Dukung',       t:'Traktir di Saweria', d:'Kalau game ini membantumu belajar, dukung pembuatan kasus berikutnya.', go:'Buka Saweria'},
+  {key:'linkedin', k:'Pembuat',      t:'Ilham di LinkedIn', d:'Konten rutin seputar data, visualisasi, dan analisis.', go:'Terhubung di LinkedIn'},
+];
+const activeLinks = () => LINK_INFO.filter(l => /^https?:\/\//.test(LINKS[l.key]||''));
+function renderCredits(){
+  const f=document.getElementById('credits'); if(!f) return;
+  const ls=activeLinks();
+  f.innerHTML = `<span>Kasus Kopi Hilang · dibuat oleh Ilham. Semua nama dan data dalam game ini fiktif.</span>
+    ${ls.length?`<nav aria-label="Tautan pembuat">${ls.map(l=>`<a href="${esc(LINKS[l.key])}" target="_blank" rel="noopener">${esc(l.t)}</a>`).join('')}</nav>`:''}`;
+}
+const promoHTML = () => { const ls=activeLinks(); return ls.length ? `<section class="promo" aria-label="Tautan pembuat">${ls.map(l=>`<a href="${esc(LINKS[l.key])}" target="_blank" rel="noopener"><span class="k">${esc(l.k)}</span><b>${esc(l.t)}</b><span class="d">${esc(l.d)}</span><span class="go">${esc(l.go)} ↗</span></a>`).join('')}</section>` : ''; };
+
+/* ===================== DATABASE KASUS ===================== */
+const SEED = `
+CREATE TABLE laporan_polisi(
+  id INTEGER PRIMARY KEY, tanggal TEXT NOT NULL, kota TEXT, jenis TEXT NOT NULL, kerugian INTEGER, deskripsi TEXT);
+INSERT INTO laporan_polisi VALUES
+(1,'2026-10-03','Kota Lembah','Kehilangan',750000,'Dompet warga hilang di Pasar Lembah.'),
+(2,'2026-10-08','Kota Lembah','Penipuan',2500000,'Pembeli ditipu penjual bibit cengkih palsu.'),
+(3,'2026-10-12','Kota Lembah','Pencurian',48000000,'40 karung kopi robusta hilang dari gudang Koperasi Bukit Dua antara pukul 21.00 dan 24.00.'),
+(4,'2026-10-12','Kota Lembah','Kecelakaan',NULL,'Motor tergelincir di Jl. Kenari karena jalan licin.'),
+(5,'2026-10-12','Kota Bukit','Pencurian',1200000,'Sepeda anak hilang dari teras rumah.'),
+(6,'2026-10-15','Kota Lembah','Kehilangan',150000,'Kunci gembok pagar balai desa hilang.'),
+(7,'2026-10-19','Kota Bukit','Penipuan',5000000,'Investasi kebun pala bodong.'),
+(8,'2026-10-21','Kota Lembah','Pencurian',3000000,'Tabung gas warung hilang.');
+
+CREATE TABLE warga(
+  id INTEGER PRIMARY KEY, nama TEXT NOT NULL, alamat TEXT, pekerjaan TEXT, tahun_lahir INTEGER);
+INSERT INTO warga VALUES
+(1,'Rina Lumowa','Jl. Cempaka 4','Guru',1988),
+(2,'Yohanis Sompotan','Jl. Cempaka 11','Petani kopi',1975),
+(3,'Hendra Pangemanan','Jl. Mawar 2','Sopir',1990),
+(4,'Stevi Rumengan','Jl. Kenari 7','Pedagang',1992),
+(5,'Marlon Tumbel','Jl. Pala 3','Penjaga gudang',1980),
+(6,'Novi Karundeng','Jl. Mawar 9','Bidan',1995),
+(7,'Jefry Wenas','Jl. Kenari 1','Montir',1986),
+(8,'Ayu Pantouw','Jl. Pala 12','Pegawai koperasi',1993),
+(9,'Fandi Mamahit','Jl. Cempaka 20','Tukang ojek',1999),
+(10,'Grace Rondonuwu','Jl. Melati 5','Pedagang',NULL),
+(11,'Ronald Kawengian','Jl. Melati 8','Petani kopi',1979),
+(12,'Sinta Mokoginta','Jl. Mawar 15','Mahasiswi',2004);
+
+CREATE TABLE ktp(
+  nik TEXT PRIMARY KEY, warga_id INTEGER UNIQUE REFERENCES warga(id), tempat_lahir TEXT);
+INSERT INTO ktp VALUES
+('7171014403880001',1,'Manado'),('7171021207750002',2,'Tomohon'),('7171030105900003',3,'Bitung'),
+('7171042208920004',4,'Tondano'),('7171051511800005',5,'Tomohon'),('7171060902950006',6,'Manado'),
+('7171072706860007',7,'Bitung'),('7171081003930008',8,'Tomohon'),('7171091901990009',9,'Manado'),
+('7171100406850010',10,'Tondano'),('7171112910790011',11,'Tomohon'),('7171120712040012',12,'Kotamobagu');
+
+CREATE TABLE kendaraan(
+  no_plat TEXT PRIMARY KEY, warga_id INTEGER NOT NULL REFERENCES warga(id),
+  merek TEXT, jenis TEXT, warna TEXT, tahun INTEGER);
+INSERT INTO kendaraan VALUES
+('DB 5567 HJ',1,'Honda Brio','Mobil','Merah',2019),
+('DB 8121 AB',3,'Toyota Hilux','Pikap','Hijau',2015),
+('DB 8344 KC',4,'Mitsubishi L300','Pikap','Hijau',2012),
+('DB 1022 LM',5,'Daihatsu Gran Max','Pikap','Hijau',2018),
+('DB 3301 PQ',6,'Toyota Avanza','Mobil','Silver',2021),
+('DB 8790 RT',7,'Suzuki Carry','Pikap','Putih',2010),
+('DB 2290 WE',8,'Toyota Kijang','Mobil','Biru',2008),
+('DB 8456 TS',10,'Isuzu Traga','Pikap','Hitam',2020),
+('DB 8603 NN',11,'Mitsubishi L300','Pikap','Biru',2014),
+('DB 8812 ZX',12,'Suzuki Carry','Pikap','Merah',2016),
+('DB 4410 KA',4,'Honda Beat','Motor','Hitam',2022),
+('DB 6123 MM',7,'Yamaha NMAX','Motor','Biru',2021);
+
+CREATE TABLE saksi(
+  id INTEGER PRIMARY KEY, laporan_id INTEGER NOT NULL REFERENCES laporan_polisi(id),
+  warga_id INTEGER NOT NULL REFERENCES warga(id), keterangan TEXT);
+INSERT INTO saksi VALUES
+(1,1,6,'Saya lihat dompet itu jatuh di dekat lapak ikan.'),
+(2,3,1,'Sekitar jam 10 malam ada pikap hijau parkir di belakang gudang. Platnya diawali DB 8.'),
+(3,3,9,'Jam 11 malam saya lewat gudang. Ada orang mengangkat karung ke mobil hijau.'),
+(4,3,7,'Saya di bengkel sampai pagi, tidak melihat apa-apa.'),
+(5,4,7,'Motornya tergelincir tepat di depan bengkel saya.'),
+(6,8,2,'Tabung gas diangkut naik motor ke arah Jl. Melati.'),
+(7,2,10,'Penjual bibit itu sudah pergi sebelum pembeli sadar.');
+
+CREATE TABLE log_gudang(
+  id INTEGER PRIMARY KEY, warga_id INTEGER NOT NULL REFERENCES warga(id),
+  tanggal TEXT, jam_masuk TEXT, jam_keluar TEXT);
+INSERT INTO log_gudang VALUES
+(1,5,'2026-10-09','07:00','17:00'),(2,3,'2026-10-09','10:00','11:00'),(3,5,'2026-10-10','07:00','17:00'),
+(4,8,'2026-10-10','08:00','16:00'),(5,4,'2026-10-11','16:00','16:20'),(6,11,'2026-10-11','09:00','10:00'),
+(7,8,'2026-10-12','08:00','16:00'),(8,4,'2026-10-12','21:40','23:55'),(9,5,'2026-10-12','07:00','17:00'),
+(10,2,'2026-10-12','14:00','14:30'),(11,5,'2026-10-13','07:00','17:00'),(12,8,'2026-10-13','08:00','16:00'),
+(13,3,'2026-10-15','10:00','10:40');
+
+CREATE TABLE penjualan_kopi(
+  id INTEGER PRIMARY KEY, warga_id INTEGER NOT NULL REFERENCES warga(id),
+  tanggal TEXT, karung INTEGER, harga_per_karung INTEGER);
+INSERT INTO penjualan_kopi VALUES
+(1,2,'2026-10-05',10,1200000),(2,11,'2026-10-06',8,1200000),(3,2,'2026-10-10',5,1250000),
+(4,4,'2026-10-13',15,900000),(5,4,'2026-10-14',15,900000),(6,11,'2026-10-14',6,1300000),
+(7,4,'2026-10-16',10,950000),(8,10,'2026-10-17',3,1300000);
+`;
+
+/* kolom: [nama, kunci] — P = primary key, F = foreign key */
+const SCHEMA = [
+  ['laporan_polisi',[['id','P'],['tanggal'],['kota'],['jenis'],['kerugian'],['deskripsi']]],
+  ['saksi',[['id','P'],['laporan_id','F'],['warga_id','F'],['keterangan']]],
+  ['warga',[['id','P'],['nama'],['alamat'],['pekerjaan'],['tahun_lahir']]],
+  ['ktp',[['nik','P'],['warga_id','F'],['tempat_lahir']]],
+  ['kendaraan',[['no_plat','P'],['warga_id','F'],['merek'],['jenis'],['warna'],['tahun']]],
+  ['log_gudang',[['id','P'],['warga_id','F'],['tanggal'],['jam_masuk'],['jam_keluar']]],
+  ['penjualan_kopi',[['id','P'],['warga_id','F'],['tanggal'],['karung'],['harga_per_karung']]],
+];
+
+const CHAPTERS = [
+  {id:'dasar', n:'Mengenal database', d:'Tabel, baris, kolom, tipe data, NULL, jenis kunci, foreign key, relasi 1:1, 1:N, N:M, kategori perintah SQL'},
+  {id:'norm', n:'Normalisasi', d:'Anomali data, functional dependency, 1NF, 2NF, 3NF, memecah tabel tanpa kehilangan data'},
+  {id:'baca', n:'Membaca data', d:'SELECT, memilih kolom, alias AS, DISTINCT, LIMIT'},
+  {id:'saring', n:'Menyaring data', d:'WHERE, operator perbandingan, AND, OR, IN, NOT, BETWEEN, LIKE, IS NULL'},
+  {id:'ringkas', n:'Mengurutkan & meringkas', d:'ORDER BY banyak kolom, LIMIT/OFFSET, urutan eksekusi, COUNT DISTINCT, SUM, AVG, MIN, MAX, GROUP BY, HAVING'},
+  {id:'fungsi', n:'Fungsi & ekspresi', d:'Kolom hitungan, ROUND, fungsi teks, gabung teks ||, fungsi tanggal, COALESCE'},
+  {id:'join', n:'JOIN & gabungan hasil', d:'INNER, LEFT, RIGHT, FULL, CROSS, SELF JOIN, tabel penghubung, UNION, INTERSECT, EXCEPT'},
+  {id:'sub', n:'Subquery & CASE', d:'Subquery skalar, IN, EXISTS, NOT EXISTS, subquery di FROM, CASE WHEN'},
+  {id:'ubah', n:'Mengubah data & transaksi', d:'INSERT, UPDATE, DELETE, constraint, BEGIN, COMMIT, ROLLBACK, ACID'},
+  {id:'struktur', n:'Membangun struktur', d:'CREATE TABLE, PRIMARY/FOREIGN KEY, NOT NULL, CHECK, DEFAULT, id otomatis, ON DELETE CASCADE, ALTER, DROP'},
+  {id:'optim', n:'View, index & keamanan', d:'CREATE VIEW, CREATE INDEX, EXPLAIN QUERY PLAN, SQL injection, GRANT dan REVOKE'},
+  {id:'rancang', n:'Merancang database', d:'Notasi crow\'s foot, kardinalitas dari cerita, merancang tabel dari kebutuhan'},
+  {id:'bonus', n:'Bonus: tingkat menengah', d:'CTE (WITH), ROW_NUMBER, RANK, total kumulatif dengan window function'},
+  {id:'ujian', n:'Ujian akhir', d:'Soal campuran tanpa petunjuk untuk mengukur kemampuanmu'},
+];
+
+/* tabel arsip lama untuk bab Normalisasi */
+const ARSIP = `CREATE TABLE arsip_kendaraan(no_plat TEXT PRIMARY KEY, merek TEXT, warna TEXT, nik TEXT, nama_pemilik TEXT, alamat_pemilik TEXT);
+INSERT INTO arsip_kendaraan VALUES
+('DB 7001 AA','Toyota Avanza','Hitam','7171010101800001','Budi Lasut','Jl. Sam Ratulangi 3'),
+('DB 7002 AB','Honda Vario','Merah','7171010101800001','Budi Lasut','Jl. Sam Ratulangi 3'),
+('DB 7003 AC','Suzuki Ertiga','Putih','7171020202850002','Meyke Tangkudung','Jl. Pierre Tendean 9'),
+('DB 7004 AD','Yamaha Mio','Biru','7171030303900003','Rocky Sumampouw','Jl. Wolter Monginsidi 1'),
+('DB 7005 AE','Honda Jazz','Silver','7171030303900003','Rocky Sumampouw','Jl. Wolter Monginsidi 1'),
+('DB 7006 AF','Kawasaki KLX','Hijau','7171030303900003','Rocky Sumampouw','Jl. Wolter Monginsidi 1'),
+('DB 7007 AG','Daihatsu Xenia','Abu-abu','7171040404950004','Lia Wowor','Jl. Bethesda 12');`;
+const T_ARSIP = ['arsip_kendaraan',[['no_plat','P'],['merek'],['warna'],['nik'],['nama_pemilik'],['alamat_pemilik']]];
+const PEMILIK = `CREATE TABLE pemilik(nik TEXT PRIMARY KEY, nama TEXT NOT NULL, alamat TEXT);
+INSERT INTO pemilik SELECT DISTINCT nik, nama_pemilik, alamat_pemilik FROM arsip_kendaraan;`;
+const T_PEMILIK = ['pemilik',[['nik','P'],['nama'],['alamat']]];
+const KBARU = `CREATE TABLE kendaraan_baru(no_plat TEXT PRIMARY KEY, merek TEXT, warna TEXT, nik TEXT REFERENCES pemilik(nik));
+INSERT INTO kendaraan_baru SELECT no_plat, merek, warna, nik FROM arsip_kendaraan;`;
+const T_KBARU = ['kendaraan_baru',[['no_plat','P'],['merek'],['warna'],['nik','F']]];
+const V_STRUKTUR = t => `SELECT name AS kolom, CASE WHEN pk > 0 THEN 'PK' ELSE '' END AS kunci, CASE WHEN pk > 0 THEN '' WHEN "notnull" = 1 THEN 'NOT NULL' ELSE '' END AS wajib FROM pragma_table_info('${t}') ORDER BY cid`;
+const V_FK = t => `SELECT "from" AS kolom, "table" AS merujuk_tabel, COALESCE("to",'id') AS merujuk_kolom FROM pragma_foreign_key_list('${t}') ORDER BY "from"`;
+
+/* ===================== LEVEL ===================== */
+const LEVELS = [
+/* ---------- BAB 1: MENGENAL DATABASE ---------- */
+{ ch:'dasar', type:'quiz', concept:'Tabel, baris, kolom', title:'Anatomi sebuah tabel', erd:true,
+  story:`Kamu analis data baru di kepolisian Kota Lembah. Sebelum menyelidiki kasus kopi yang hilang, kenali dulu cara data kepolisian disimpan.`,
+  explain:`Database relasional menyimpan data di dalam tabel. Setiap tabel membahas satu jenis hal: warga, kendaraan, laporan. Kolom adalah atribut yang dicatat (nama, alamat). Baris, disebut juga record, adalah satu data lengkap tentang satu hal.`,
+  example:`tabel warga
+┌────┬──────────────────┬─────────────┐
+│ id │ nama             │ pekerjaan   │ ← nama kolom
+├────┼──────────────────┼─────────────┤
+│ 1  │ Rina Lumowa      │ Guru        │ ← satu baris
+│ 2  │ Yohanis Sompotan │ Petani kopi │
+└────┴──────────────────┴─────────────┘`,
+  q:`Di tabel warga, data milik Rina Lumowa (id, nama, alamat, pekerjaan, tahun lahir) tersimpan sebagai apa?`,
+  options:[[`Satu kolom`,`Kolom menyimpan satu atribut untuk semua warga, misalnya kolom nama berisi nama semua warga.`],
+           [`Satu baris (record)`,``],
+           [`Satu tabel`,`Satu tabel berisi banyak warga sekaligus.`],
+           [`Satu database`,`Database berisi banyak tabel.`]], answer:1,
+  why:`Satu baris = satu record lengkap tentang satu warga. Tabel warga berisi 12 baris, artinya 12 warga.` },
+
+{ ch:'dasar', concept:'Melihat isi tabel', title:'Tabel pertamamu',
+  story:`Saatnya melihat isi tabel sungguhan. Tabel <code>warga</code> berisi penduduk yang terkait dengan berkas-berkas bulan ini.`,
+  task:`Tampilkan semua kolom dan semua baris dari tabel warga.`,
+  explain:`SELECT memilih data. Tanda * artinya "semua kolom". FROM menunjuk tabel sumbernya. Titik koma menandai akhir perintah.`,
+  example:`SELECT * FROM nama_tabel;`,
+  hints:[`Polanya: SELECT * FROM nama_tabel;`,`Nama tabelnya warga.`],
+  solution:`SELECT * FROM warga;` },
+
+{ ch:'dasar', type:'quiz', concept:'Primary key', title:'Kunci setiap baris', erd:true,
+  story:`Di kota sebesar ini pasti ada warga yang namanya sama. Kalau polisi mencari "Ayu", yang mana yang dimaksud? Database butuh cara menunjuk satu baris dengan pasti.`,
+  explain:`Primary key (PK) adalah kolom yang nilainya unik untuk setiap baris dan tidak boleh kosong. Dengan PK, satu baris bisa ditunjuk tanpa keraguan. Biasanya PK berupa angka id yang tidak punya arti lain, sehingga tidak perlu diubah walau data orangnya berubah. Di diagram, PK ditandai merah.`,
+  example:`CREATE TABLE warga (
+  id   INTEGER PRIMARY KEY,  -- unik & wajib ada
+  nama TEXT,
+  ...
+);`,
+  q:`Kolom mana yang paling tepat dijadikan primary key tabel warga?`,
+  options:[[`nama`,`Dua warga bisa bernama sama, jadi nama tidak unik.`],
+           [`alamat`,`Satu rumah bisa dihuni beberapa orang, dan alamat bisa berubah saat pindah.`],
+           [`id`,``],
+           [`pekerjaan`,`Banyak warga punya pekerjaan yang sama.`]], answer:2,
+  why:`id unik untuk setiap warga, tidak pernah kosong, dan tidak perlu berubah. Tiga syarat itulah yang membuat kolom layak jadi primary key.` },
+
+{ ch:'dasar', type:'quiz', concept:'Tipe data & NULL', title:'Kolom yang kosong',
+  story:`Saat memeriksa tabel warga, kamu melihat tahun lahir Grace Rondonuwu tertulis <code>NULL</code>.`,
+  explain:`Setiap kolom punya tipe data: INTEGER untuk bilangan bulat, REAL untuk desimal, TEXT untuk teks. SQLite menyimpan tanggal sebagai TEXT berformat 'YYYY-MM-DD' agar bisa diurutkan. NULL artinya nilainya tidak diketahui atau belum diisi. NULL bukan angka 0 dan bukan teks kosong.`,
+  example:`nama        TEXT     → 'Stevi Rumengan'
+tahun_lahir INTEGER  → 1992
+tanggal     TEXT     → '2026-10-12'
+kerugian    INTEGER  → NULL (belum dihitung)`,
+  q:`Kolom tahun_lahir milik Grace Rondonuwu bernilai NULL. Apa artinya?`,
+  options:[[`Grace lahir pada tahun 0`,`NULL bukan angka nol. Angka 0 adalah nilai yang diketahui.`],
+           [`Tahun lahirnya tidak diketahui atau belum diisi`,``],
+           [`Grace lahir pada tahun yang bernama "NULL"`,`NULL bukan teks. Teks selalu ditulis dalam kutip, misalnya 'NULL'.`],
+           [`Barisnya rusak dan harus dihapus`,`NULL itu sah. Data lain di baris Grace tetap berguna.`]], answer:1,
+  why:`NULL menandai nilai yang tidak diketahui. Karena itu NULL juga tidak bisa dibandingkan dengan tanda = ; nanti kamu akan memakai IS NULL.` },
+
+{ ch:'dasar', type:'quiz', concept:'Foreign key', title:'Penghubung antar-tabel', erd:true,
+  story:`Tabel <code>kendaraan</code> tidak menyimpan nama pemilik. Yang ada hanya kolom <code>warga_id</code>. Bagaimana kita tahu siapa pemiliknya?`,
+  explain:`Foreign key (FK) adalah kolom yang menyimpan nilai primary key dari tabel lain. Dengan FK, dua tabel terhubung tanpa perlu menyalin data. Database juga bisa menolak FK yang menunjuk ke data yang tidak ada. Di diagram, FK ditandai biru.`,
+  example:`kendaraan.warga_id  ──►  warga.id
+'DB 8344 KC' punya warga_id = 4
+warga dengan id = 4 → Stevi Rumengan`,
+  q:`Tabel kendaraan punya kolom warga_id. Apa fungsinya?`,
+  options:[[`Primary key tabel kendaraan`,`Primary key kendaraan adalah no_plat. Satu warga bisa muncul di beberapa kendaraan, jadi warga_id tidak unik di sini.`],
+           [`Foreign key yang menunjuk pemilik di warga.id`,``],
+           [`Nomor urut kendaraan`,`Nomor urut tidak menghubungkan ke tabel lain.`],
+           [`Data ganda yang sebaiknya dihapus`,`Justru kolom ini yang menghubungkan kendaraan dengan pemiliknya.`]], answer:1,
+  why:`warga_id di kendaraan adalah foreign key. Nilainya selalu sama dengan salah satu id di tabel warga.` },
+
+{ ch:'dasar', type:'quiz', concept:'Relasi 1:N', title:'Satu pemilik, banyak kendaraan', erd:true,
+  story:`Stevi Rumengan punya pikap dan motor. Tapi setiap kendaraan hanya punya satu pemilik.`,
+  explain:`Relasi menjelaskan berapa baris di satu tabel yang terhubung ke baris di tabel lain. 1:1 artinya satu ke satu, 1:N satu ke banyak, N:M banyak ke banyak. Pada relasi 1:N, foreign key selalu diletakkan di tabel sisi "banyak".`,
+  example:`warga (1) ───< kendaraan (N)
+Stevi ──► DB 8344 KC  (pikap)
+      └─► DB 4410 KA  (motor)`,
+  q:`Satu warga bisa punya beberapa kendaraan, tapi setiap kendaraan hanya punya satu pemilik. Relasi warga dengan kendaraan adalah…`,
+  options:[[`1:1 (satu ke satu)`,`Kalau 1:1, Stevi hanya boleh punya satu kendaraan.`],
+           [`1:N (satu ke banyak)`,``],
+           [`N:M (banyak ke banyak)`,`N:M berarti satu kendaraan juga bisa dimiliki banyak warga. Di data ini tidak begitu.`],
+           [`Tidak berelasi`,`Keduanya terhubung lewat kendaraan.warga_id.`]], answer:1,
+  why:`Satu warga → banyak kendaraan. FK-nya (warga_id) ada di tabel kendaraan, sisi "banyak".` },
+
+{ ch:'dasar', type:'quiz', concept:'Relasi 1:1', title:'Satu orang, satu KTP', erd:true,
+  story:`Tabel <code>ktp</code> menyimpan NIK dan tempat lahir. Setiap warga punya tepat satu KTP.`,
+  explain:`Pada relasi 1:1, setiap baris di tabel A berpasangan dengan paling banyak satu baris di tabel B. Caranya: foreign key diberi constraint UNIQUE agar tidak ada dua baris yang menunjuk orang yang sama. Relasi 1:1 dipakai untuk memisahkan data yang jarang dipakai atau lebih sensitif.`,
+  example:`CREATE TABLE ktp (
+  nik      TEXT PRIMARY KEY,
+  warga_id INTEGER UNIQUE REFERENCES warga(id)
+);`,
+  q:`Kenapa kolom warga_id di tabel ktp diberi UNIQUE?`,
+  options:[[`Supaya satu warga tidak punya dua KTP, sehingga relasinya 1:1`,``],
+           [`Supaya warga_id menjadi primary key tabel warga`,`Primary key warga tetap warga.id. UNIQUE hanya mencegah nilai kembar di ktp.warga_id.`],
+           [`Supaya pencarian bisa memakai LIKE`,`UNIQUE tidak berhubungan dengan cara mencari.`],
+           [`Supaya warga_id boleh kosong`,`UNIQUE mengatur nilai kembar, bukan nilai kosong.`]], answer:0,
+  why:`FK + UNIQUE = relasi 1:1. Tanpa UNIQUE, relasinya berubah menjadi 1:N.` },
+
+{ ch:'dasar', type:'quiz', concept:'Relasi N:M', title:'Banyak saksi, banyak laporan', erd:true,
+  story:`Jefry Wenas menjadi saksi di dua laporan berbeda, dan laporan pencurian kopi punya tiga saksi.`,
+  explain:`Relasi banyak-ke-banyak tidak bisa disimpan dengan satu foreign key. Kita butuh tabel penghubung (junction table) yang berisi dua foreign key. Di sini tabel saksi menghubungkan laporan_polisi dan warga. Setiap baris saksi berarti "warga X bersaksi di laporan Y".`,
+  example:`laporan_polisi (1) ───< saksi >─── (1) warga
+saksi: laporan_id=3, warga_id=1
+       laporan_id=3, warga_id=9
+       laporan_id=3, warga_id=7
+       laporan_id=4, warga_id=7`,
+  q:`Satu laporan bisa punya banyak saksi, dan satu warga bisa bersaksi di banyak laporan. Cara menyimpan yang benar adalah…`,
+  options:[[`Kolom saksi di laporan_polisi berisi nama-nama dipisah koma`,`Satu sel harus berisi satu nilai. Daftar dipisah koma sulit dicari, dihitung, dan dijaga konsistensinya.`],
+           [`Tabel penghubung saksi berisi laporan_id dan warga_id`,``],
+           [`Kolom laporan_id di tabel warga`,`Satu kolom hanya muat satu laporan per warga, padahal Jefry bersaksi di dua laporan.`],
+           [`Tidak bisa disimpan di database relasional`,`Bisa, dengan tabel penghubung.`]], answer:1,
+  why:`N:M = dua relasi 1:N yang bertemu di satu tabel penghubung. Tabel saksi punya dua FK: laporan_id dan warga_id.` },
+
+{ ch:'dasar', type:'quiz', concept:'Normalisasi', title:'Simpan satu fakta sekali',
+  story:`Seorang petugas mengusulkan menambahkan kolom alamat_pemilik ke tabel kendaraan "biar praktis".`,
+  explain:`Normalisasi adalah cara merancang tabel agar setiap fakta disimpan di satu tempat saja. Data yang diulang di banyak tempat mudah tidak sinkron: kalau warga pindah rumah, salinan alamat di tabel lain bisa lupa diperbarui. Aturan dasarnya: satu sel berisi satu nilai, satu tabel membahas satu hal, dan tabel lain cukup merujuk lewat foreign key.`,
+  example:`✗ kendaraan(no_plat, merek, nama_pemilik, alamat_pemilik)
+✓ kendaraan(no_plat, merek, warga_id)
+  warga(id, nama, alamat)`,
+  q:`Kenapa alamat pemilik sebaiknya tidak disimpan langsung di tabel kendaraan?`,
+  options:[[`Supaya setiap fakta tersimpan sekali; alamat cukup diambil dari tabel warga lewat warga_id`,``],
+           [`Karena SQL tidak bisa menyimpan teks panjang`,`SQL bisa menyimpan teks panjang.`],
+           [`Supaya tabel kendaraan punya lebih banyak kolom`,`Justru kebalikannya: kolom yang tidak perlu dibuang.`],
+           [`Karena alamat tidak boleh ditampilkan bersama kendaraan`,`Boleh. Nanti kamu akan menampilkannya bersama lewat JOIN.`]], answer:0,
+  why:`Itulah inti normalisasi: hindari data ganda. Untuk menampilkan alamat bersama kendaraan, gabungkan tabelnya dengan JOIN (Bab 5).` },
+
+/* ---------- BAB 2: MEMBACA DATA ---------- */
+{ ch:'baca', concept:'Memilih kolom', title:'Ringkasan untuk atasan',
+  story:`Kepala Penyidik tidak sempat membaca deskripsi panjang. Ia hanya mau tahu kapan, di mana, dan apa jenis kejadiannya.`,
+  task:`Tampilkan kolom tanggal, kota, dan jenis dari laporan_polisi, dengan urutan kolom persis seperti itu.`,
+  explain:`Ganti * dengan nama kolom yang dipisah koma. Urutan kolom di hasil mengikuti urutan yang kamu tulis.`,
+  example:`SELECT kolom1, kolom2 FROM nama_tabel;`,
+  hints:[`Tulis nama kolom setelah SELECT, dipisah koma.`,`SELECT tanggal, kota, jenis FROM …`],
+  solution:`SELECT tanggal, kota, jenis FROM laporan_polisi;` },
+
+{ ch:'baca', concept:'Alias AS', title:'Judul kolom yang rapi', checkNames:true,
+  story:`Daftar warga akan dicetak untuk rapat. Judul kolomnya harus mudah dibaca orang awam.`,
+  task:`Dari tabel warga, tampilkan kolom nama dengan judul nama_warga dan kolom pekerjaan dengan judul profesi.`,
+  explain:`AS memberi nama tampilan (alias) pada kolom hasil. Data aslinya tidak berubah, hanya judulnya di hasil. Alias juga dipakai untuk memberi nama pada hasil hitungan.`,
+  example:`SELECT kolom AS judul_baru FROM tabel;`,
+  hints:[`Tulis AS setelah nama kolom, lalu judul barunya.`,`SELECT nama AS nama_warga, pekerjaan AS …`],
+  solution:`SELECT nama AS nama_warga, pekerjaan AS profesi FROM warga;`,
+  require:[/\bas\b/i], requireMsg:`Gunakan AS untuk memberi judul kolom.` },
+
+{ ch:'baca', concept:'DISTINCT', title:'Kota mana saja?',
+  story:`Laporan bulan ini datang dari beberapa kota. Kamu perlu daftar kotanya saja, tanpa nama yang berulang.`,
+  task:`Tampilkan daftar kota dari laporan_polisi tanpa duplikat.`,
+  explain:`DISTINCT membuang baris hasil yang kembar. Letakkan tepat setelah SELECT.`,
+  example:`SELECT DISTINCT kolom FROM tabel;`,
+  hints:[`SELECT DISTINCT …`,`SELECT DISTINCT kota FROM laporan_polisi;`],
+  solution:`SELECT DISTINCT kota FROM laporan_polisi;`,
+  require:[/\bdistinct\b|\bgroup\s+by\b/i], requireMsg:`Gunakan DISTINCT untuk membuang kota yang berulang.` },
+
+{ ch:'baca', concept:'LIMIT', title:'Intip sebagian saja',
+  story:`Di database sungguhan, satu tabel bisa berisi jutaan baris. Analis yang baik mengintip beberapa baris dulu sebelum menulis query besar.`,
+  task:`Tampilkan 3 baris pertama dari tabel kendaraan (semua kolom).`,
+  explain:`LIMIT membatasi jumlah baris yang ditampilkan. LIMIT diletakkan paling akhir di query.`,
+  example:`SELECT * FROM tabel LIMIT 5;`,
+  hints:[`Tambahkan LIMIT di akhir query.`,`SELECT * FROM kendaraan LIMIT 3;`],
+  solution:`SELECT * FROM kendaraan LIMIT 3;`,
+  require:[/\blimit\b/i], requireMsg:`Gunakan LIMIT untuk membatasi jumlah baris.` },
+
+/* ---------- BAB 3: MENYARING DATA ---------- */
+{ ch:'saring', concept:'WHERE', title:'Hanya kasus pencurian',
+  story:`Koperasi Bukit Dua melapor kehilangan. Mulailah dengan mengumpulkan semua laporan pencurian.`,
+  task:`Tampilkan semua kolom laporan_polisi yang jenisnya Pencurian.`,
+  explain:`WHERE menyaring baris. Hanya baris yang memenuhi syarat yang ditampilkan. Teks ditulis di dalam tanda kutip tunggal, dan huruf besar-kecilnya harus persis sama dengan data.`,
+  example:`SELECT * FROM tabel WHERE kolom = 'nilai';`,
+  hints:[`WHERE jenis = '…'`,`WHERE jenis = 'Pencurian' (huruf P besar).`],
+  solution:`SELECT * FROM laporan_polisi WHERE jenis = 'Pencurian';`,
+  require:[/\bwhere\b/i], requireMsg:`Saring dengan WHERE, jangan memilih baris lewat id satu per satu.` },
+
+{ ch:'saring', concept:'AND', title:'Laporan yang tepat',
+  story:`Ada tiga pencurian, tapi satu terjadi di Kota Bukit dan satu lagi di tanggal lain.`,
+  task:`Cari laporan berjenis Pencurian, di Kota Lembah, pada tanggal 2026-10-12. Tampilkan semua kolom.`,
+  explain:`AND menggabungkan beberapa syarat. Baris hanya lolos jika memenuhi semua syarat. Tanggal juga ditulis dalam kutip tunggal.`,
+  example:`WHERE syarat1
+  AND syarat2
+  AND syarat3`,
+  hints:[`Ada tiga syarat: jenis, kota, dan tanggal.`,`WHERE jenis = 'Pencurian' AND kota = 'Kota Lembah' AND tanggal = '2026-10-12'`],
+  solution:`SELECT * FROM laporan_polisi WHERE jenis='Pencurian' AND kota='Kota Lembah' AND tanggal='2026-10-12';`,
+  require:[/\band\b/i], requireMsg:`Gabungkan syaratnya dengan AND.` },
+
+{ ch:'saring', concept:'Operator perbandingan', title:'Kerugian besar',
+  story:`Kepala Penyidik minta daftar kasus dengan kerugian besar untuk diprioritaskan.`,
+  task:`Tampilkan id, jenis, dan kerugian dari laporan yang kerugiannya lebih dari 2000000.`,
+  explain:`Operator perbandingan: = (sama), <> (tidak sama), > (lebih dari), < (kurang dari), >= dan <=. Angka ditulis tanpa kutip dan tanpa titik ribuan.`,
+  example:`WHERE kerugian >= 1000000`,
+  hints:[`Pakai tanda > dan angka tanpa titik: 2000000`,`SELECT id, jenis, kerugian FROM laporan_polisi WHERE kerugian > 2000000;`],
+  solution:`SELECT id, jenis, kerugian FROM laporan_polisi WHERE kerugian > 2000000;` },
+
+{ ch:'saring', concept:'OR & IN', title:'Yang dekat dengan kopi',
+  story:`Orang yang paham jual-beli kopi bisa menjual hasil curian dengan cepat. Kumpulkan para petani kopi dan pedagang.`,
+  task:`Tampilkan nama dan pekerjaan warga yang pekerjaannya Petani kopi atau Pedagang.`,
+  explain:`OR meloloskan baris yang memenuhi salah satu syarat. IN adalah cara singkat untuk banyak OR pada kolom yang sama. Hati-hati mencampur AND dan OR: AND dikerjakan lebih dulu, jadi beri tanda kurung bila perlu.`,
+  example:`WHERE kota = 'A' OR kota = 'B'
+-- sama dengan
+WHERE kota IN ('A', 'B')`,
+  hints:[`WHERE pekerjaan IN ('…', '…')`,`WHERE pekerjaan IN ('Petani kopi', 'Pedagang')`],
+  solution:`SELECT nama, pekerjaan FROM warga WHERE pekerjaan IN ('Petani kopi','Pedagang');`,
+  require:[/\bin\s*\(|\bor\b/i], requireMsg:`Gunakan IN atau OR.` },
+
+{ ch:'saring', concept:'BETWEEN', title:'Seputar hari kejadian',
+  story:`Pelaku kadang membuat masalah lain di hari-hari sekitar kejadian. Periksa semua laporan dalam rentang waktu itu.`,
+  task:`Tampilkan id, tanggal, dan jenis laporan dari tanggal 2026-10-10 sampai 2026-10-15.`,
+  explain:`BETWEEN a AND b memilih nilai dari a sampai b, termasuk kedua ujungnya. Bisa dipakai untuk angka maupun tanggal berformat 'YYYY-MM-DD'.`,
+  example:`WHERE tanggal BETWEEN '2026-01-01' AND '2026-01-31'`,
+  hints:[`WHERE tanggal BETWEEN '…' AND '…'`,`WHERE tanggal BETWEEN '2026-10-10' AND '2026-10-15'`],
+  solution:`SELECT id, tanggal, jenis FROM laporan_polisi WHERE tanggal BETWEEN '2026-10-10' AND '2026-10-15';` },
+
+{ ch:'saring', concept:'WHERE pada FK', title:'Suara para saksi',
+  story:`Kesaksian untuk tiap laporan disimpan di tabel penghubung <code>saksi</code>. Laporan pencurian kopi punya id 3.`,
+  task:`Tampilkan warga_id dan keterangan dari tabel saksi untuk laporan_id 3.`,
+  explain:`Foreign key bisa langsung dipakai untuk menyaring. laporan_id = 3 berarti "semua kesaksian untuk laporan nomor 3".`,
+  example:`SELECT kolom1, kolom2 FROM saksi WHERE laporan_id = 3;`,
+  hints:[`Angka tidak perlu kutip: laporan_id = 3`,`SELECT warga_id, keterangan FROM saksi WHERE laporan_id = 3;`],
+  solution:`SELECT warga_id, keterangan FROM saksi WHERE laporan_id = 3;` },
+
+{ ch:'saring', concept:'LIKE', title:'Pikap hijau berplat DB 8',
+  story:`Para saksi menyebut <em>mobil hijau</em> dan plat yang <em>diawali DB 8</em>.`,
+  task:`Cari kendaraan berwarna Hijau yang no_plat-nya diawali 'DB 8'. Tampilkan semua kolom.`,
+  explain:`LIKE mencocokkan pola teks. Tanda % berarti "karakter apa saja, berapa pun panjangnya", dan _ berarti tepat satu karakter. 'DB 8%' cocok dengan semua teks yang diawali DB 8.`,
+  example:`WHERE nama LIKE 'R%'      -- diawali R
+WHERE nama LIKE '%an'     -- diakhiri an
+WHERE nama LIKE '%kopi%'  -- mengandung kopi`,
+  hints:[`no_plat LIKE 'DB 8%'`,`Tambah syarat kedua: AND warna = 'Hijau'`],
+  solution:`SELECT * FROM kendaraan WHERE warna='Hijau' AND no_plat LIKE 'DB 8%';`,
+  require:[/\blike\b/i], requireMsg:`Level ini melatih LIKE. Gunakan LIKE dengan tanda %.` },
+
+{ ch:'saring', concept:'IS NULL', title:'Kerugian yang belum dihitung',
+  story:`Bagian keuangan menanyakan laporan yang nilai kerugiannya masih kosong.`,
+  task:`Tampilkan id dan jenis laporan yang kerugiannya belum tercatat (NULL).`,
+  explain:`NULL tidak bisa dibandingkan dengan =. Hasil kerugian = NULL selalu "tidak diketahui", sehingga tidak ada baris yang lolos. Gunakan IS NULL atau IS NOT NULL.`,
+  example:`WHERE kolom IS NULL
+WHERE kolom IS NOT NULL`,
+  hints:[`Jangan pakai = NULL.`,`WHERE kerugian IS NULL`],
+  solution:`SELECT id, jenis FROM laporan_polisi WHERE kerugian IS NULL;`,
+  require:[/\bis\s+null\b/i], requireMsg:`Gunakan IS NULL.` },
+
+/* ---------- BAB 4: MENGURUTKAN & MERINGKAS ---------- */
+{ ch:'ringkas', concept:'ORDER BY', title:'Kronologi hari kejadian',
+  story:`Gudang punya buku tamu digital, tabel <code>log_gudang</code>. Susun siapa saja yang masuk pada hari pencurian.`,
+  task:`Tampilkan semua kolom log_gudang untuk tanggal 2026-10-12, diurutkan menurut jam_masuk dari yang paling awal.`,
+  explain:`ORDER BY mengurutkan hasil. Bawaannya naik (ASC). Tulis DESC untuk urutan turun. ORDER BY ditulis setelah WHERE. Tanpa ORDER BY, urutan hasil tidak dijamin.`,
+  example:`SELECT * FROM tabel
+WHERE ...
+ORDER BY kolom ASC;`,
+  hints:[`Urutannya: SELECT … FROM … WHERE … ORDER BY …`,`ORDER BY jam_masuk`],
+  solution:`SELECT * FROM log_gudang WHERE tanggal='2026-10-12' ORDER BY jam_masuk;`,
+  orderMatters:true, require:[/\border\s+by\b/i], requireMsg:`Gunakan ORDER BY agar urutannya pasti.` },
+
+{ ch:'ringkas', concept:'DESC + LIMIT', title:'Tiga kasus terbesar',
+  story:`Untuk rapat koordinasi, atasan hanya mau tiga kasus dengan kerugian terbesar.`,
+  task:`Tampilkan id, jenis, dan kerugian dari 3 laporan dengan kerugian terbesar, urut dari yang terbesar.`,
+  explain:`Gabungkan ORDER BY … DESC dengan LIMIT untuk mengambil "n teratas". Urutan klausa: WHERE, ORDER BY, lalu LIMIT.`,
+  example:`SELECT * FROM tabel
+ORDER BY nilai DESC
+LIMIT 5;`,
+  hints:[`ORDER BY kerugian DESC`,`Tambahkan LIMIT 3 di paling akhir.`],
+  solution:`SELECT id, jenis, kerugian FROM laporan_polisi ORDER BY kerugian DESC LIMIT 3;`,
+  orderMatters:true, require:[/\bdesc\b/i,/\blimit\b/i], requireMsg:`Gunakan ORDER BY … DESC dan LIMIT.` },
+
+{ ch:'ringkas', concept:'COUNT', title:'Berapa banyak laporan?',
+  story:`Wali kota bertanya: berapa laporan yang masuk dari Kota Lembah bulan ini?`,
+  task:`Hitung jumlah laporan di laporan_polisi yang kotanya Kota Lembah. Hasilnya satu angka.`,
+  explain:`COUNT(*) menghitung jumlah baris. Fungsi seperti ini disebut fungsi agregat: ia meringkas banyak baris menjadi satu nilai. COUNT(kolom) hanya menghitung baris yang kolomnya tidak NULL.`,
+  example:`SELECT COUNT(*) FROM tabel WHERE ...;`,
+  hints:[`SELECT COUNT(*) FROM laporan_polisi …`,`… WHERE kota = 'Kota Lembah';`],
+  solution:`SELECT COUNT(*) FROM laporan_polisi WHERE kota='Kota Lembah';`,
+  require:[/\bcount\s*\(/i], requireMsg:`Gunakan COUNT untuk menghitung.` },
+
+{ ch:'ringkas', concept:'SUM, MIN, MAX, AVG', title:'Pasar kopi bulan ini',
+  story:`Kopi curian pasti dijual. Tabel <code>penjualan_kopi</code> mencatat penjualan di pasar. Lihat gambaran besarnya dulu.`,
+  task:`Dari penjualan_kopi, tampilkan dalam satu baris: total karung (SUM), harga_per_karung termurah (MIN), dan termahal (MAX), dengan urutan itu.`,
+  explain:`SUM menjumlahkan, AVG merata-rata, MIN mencari nilai terkecil, MAX nilai terbesar. Beberapa agregat bisa ditulis sekaligus, dipisah koma.`,
+  example:`SELECT SUM(a), AVG(a), MIN(b), MAX(b) FROM tabel;`,
+  hints:[`SELECT SUM(karung), MIN(…), MAX(…) FROM penjualan_kopi;`,`MIN(harga_per_karung) dan MAX(harga_per_karung)`],
+  solution:`SELECT SUM(karung), MIN(harga_per_karung), MAX(harga_per_karung) FROM penjualan_kopi;`,
+  require:[/\bsum\s*\(/i,/\bmin\s*\(/i,/\bmax\s*\(/i], requireMsg:`Gunakan SUM, MIN, dan MAX.` },
+
+{ ch:'ringkas', concept:'GROUP BY', title:'Siapa menjual berapa',
+  story:`Harga termurah di pasar 900 ribu per karung, jauh di bawah harga wajar. Siapa yang menjual banyak dengan harga miring?`,
+  task:`Dari penjualan_kopi, tampilkan warga_id dan total karung yang dijual setiap warga.`,
+  explain:`GROUP BY mengelompokkan baris yang nilainya sama, lalu fungsi agregat dihitung per kelompok. Setiap kolom di SELECT yang bukan agregat harus ada di GROUP BY.`,
+  example:`SELECT kolom, SUM(angka) AS total
+FROM tabel
+GROUP BY kolom;`,
+  hints:[`SELECT warga_id, SUM(karung) …`,`Akhiri dengan GROUP BY warga_id`],
+  solution:`SELECT warga_id, SUM(karung) AS total_karung FROM penjualan_kopi GROUP BY warga_id;`,
+  require:[/\bgroup\s+by\b/i], requireMsg:`Gunakan GROUP BY.` },
+
+{ ch:'ringkas', concept:'HAVING', title:'Penjual yang mencurigakan',
+  story:`Yang hilang 40 karung. Saring kelompok penjual yang total jualannya mendekati angka itu.`,
+  task:`Tampilkan warga_id dan total karung, hanya untuk warga yang total karungnya 30 atau lebih.`,
+  explain:`WHERE menyaring baris sebelum dikelompokkan. HAVING menyaring kelompok setelah dihitung. Syarat yang memakai fungsi agregat harus ditulis di HAVING, bukan di WHERE.`,
+  example:`SELECT kolom, SUM(x) AS total
+FROM tabel
+GROUP BY kolom
+HAVING SUM(x) > 100;`,
+  hints:[`Mulai dari query level sebelumnya.`,`Tambahkan HAVING SUM(karung) >= 30 setelah GROUP BY.`],
+  solution:`SELECT warga_id, SUM(karung) AS total_karung FROM penjualan_kopi GROUP BY warga_id HAVING SUM(karung) >= 30;`,
+  require:[/\bhaving\b/i], requireMsg:`Gunakan HAVING untuk menyaring hasil kelompok.`,
+  win:`warga_id 4 menjual tepat 40 karung dengan harga di bawah pasar. Simpan petunjuk ini.` },
+
+/* ---------- BAB 5: RELASI & JOIN ---------- */
+{ ch:'join', concept:'INNER JOIN', title:'Pemilik pikap hijau', erd:true,
+  story:`Dua pikap hijau berplat DB 8 cocok dengan keterangan saksi. Nama pemiliknya ada di tabel <code>warga</code>. Hubungkan lewat foreign key <code>kendaraan.warga_id</code>.`,
+  task:`Tampilkan nama, no_plat, dan merek untuk kendaraan Hijau dengan plat diawali 'DB 8'.`,
+  explain:`JOIN menggabungkan dua tabel. ON menyebut syarat penghubungnya, biasanya FK = PK. INNER JOIN (atau JOIN saja) hanya menampilkan baris yang punya pasangan di kedua tabel. Beri alias tabel (warga w) supaya query lebih pendek.`,
+  example:`SELECT w.nama, k.merek
+FROM kendaraan k
+JOIN warga w ON k.warga_id = w.id
+WHERE ...;`,
+  hints:[`FROM kendaraan k JOIN warga w ON k.warga_id = w.id`,`WHERE k.warna = 'Hijau' AND k.no_plat LIKE 'DB 8%'`],
+  solution:`SELECT w.nama, k.no_plat, k.merek FROM kendaraan k JOIN warga w ON k.warga_id = w.id WHERE k.warna='Hijau' AND k.no_plat LIKE 'DB 8%';`,
+  require:[/\bjoin\b/i], requireMsg:`Gunakan JOIN untuk menggabungkan kendaraan dan warga.` },
+
+{ ch:'join', concept:'JOIN tabel penghubung', title:'Siapa saja saksinya', erd:true,
+  story:`Di Bab 3 kamu hanya melihat warga_id para saksi. Tampilkan nama mereka lewat tabel penghubung <code>saksi</code>.`,
+  task:`Tampilkan nama saksi dan keterangannya untuk laporan_id 3.`,
+  explain:`Tabel penghubung menyimpan pasangan FK. Untuk mendapatkan nama, gabungkan tabel penghubung dengan tabel yang ditunjuk FK-nya.`,
+  example:`SELECT w.nama, s.keterangan
+FROM saksi s
+JOIN warga w ON s.warga_id = w.id
+WHERE s.laporan_id = ...;`,
+  hints:[`FROM saksi s JOIN warga w ON s.warga_id = w.id`,`WHERE s.laporan_id = 3`],
+  solution:`SELECT w.nama, s.keterangan FROM saksi s JOIN warga w ON s.warga_id = w.id WHERE s.laporan_id = 3;`,
+  require:[/\bjoin\b/i], requireMsg:`Gunakan JOIN antara saksi dan warga.` },
+
+{ ch:'join', concept:'LEFT JOIN', title:'Yang tidak punya kendaraan', erd:true,
+  story:`Saksi kedua, Fandi, bilang ia lewat sambil mengojek motor pinjaman. Siapa saja warga yang tidak punya kendaraan terdaftar sama sekali?`,
+  task:`Tampilkan nama warga yang tidak punya satu pun kendaraan.`,
+  explain:`LEFT JOIN menampilkan semua baris tabel kiri, walau tidak punya pasangan di tabel kanan. Kolom dari tabel kanan lalu berisi NULL. Saring dengan IS NULL untuk menemukan baris tanpa pasangan.`,
+  example:`SELECT a.kolom
+FROM tabelA a
+LEFT JOIN tabelB b ON b.a_id = a.id
+WHERE b.id IS NULL;`,
+  hints:[`FROM warga w LEFT JOIN kendaraan k ON k.warga_id = w.id`,`WHERE k.no_plat IS NULL`],
+  solution:`SELECT w.nama FROM warga w LEFT JOIN kendaraan k ON k.warga_id = w.id WHERE k.no_plat IS NULL;`,
+  require:[/\bleft\s+(outer\s+)?join\b/i], requireMsg:`Level ini melatih LEFT JOIN.` },
+
+{ ch:'join', concept:'JOIN + GROUP BY', title:'Pemilik lebih dari satu kendaraan', erd:true,
+  story:`Relasi 1:N terlihat jelas ketika dihitung: ada warga yang punya lebih dari satu kendaraan.`,
+  task:`Tampilkan nama dan jumlah kendaraan untuk warga yang punya lebih dari 1 kendaraan.`,
+  explain:`JOIN, GROUP BY, dan HAVING bisa dipakai bersama. Kelompokkan per warga, hitung kendaraannya, lalu saring kelompok yang jumlahnya lebih dari 1.`,
+  example:`SELECT w.nama, COUNT(*) AS jumlah
+FROM warga w
+JOIN kendaraan k ON k.warga_id = w.id
+GROUP BY w.id, w.nama
+HAVING COUNT(*) > 1;`,
+  hints:[`JOIN warga dan kendaraan, lalu GROUP BY w.id, w.nama`,`HAVING COUNT(*) > 1`],
+  solution:`SELECT w.nama, COUNT(*) AS jumlah_kendaraan FROM warga w JOIN kendaraan k ON k.warga_id = w.id GROUP BY w.id, w.nama HAVING COUNT(*) > 1;`,
+  require:[/\bjoin\b/i,/\bgroup\s+by\b/i], requireMsg:`Gunakan JOIN dan GROUP BY.` },
+
+{ ch:'join', concept:'JOIN 3 tabel', title:'Tunjuk pelakunya', erd:true,
+  story:`Dua pemilik pikap hijau tersisa. Hanya satu yang tercatat masuk gudang pada malam pencurian.`,
+  task:`Tampilkan hanya kolom nama dari pemilik pikap Hijau berplat 'DB 8%' yang tercatat di log_gudang pada 2026-10-12.`,
+  explain:`JOIN bisa dirangkai. Hubungkan kendaraan ke warga, lalu warga ke log_gudang lewat log_gudang.warga_id = warga.id. Setelah itu saring di WHERE.`,
+  example:`SELECT w.nama
+FROM kendaraan k
+JOIN warga w      ON k.warga_id = w.id
+JOIN log_gudang l ON l.warga_id = w.id
+WHERE ...;`,
+  hints:[`Mulai dari query "Pemilik pikap hijau", lalu tambah JOIN log_gudang l ON l.warga_id = w.id`,`Tambah syarat AND l.tanggal = '2026-10-12', dan ubah SELECT menjadi w.nama saja.`],
+  solution:`SELECT w.nama FROM kendaraan k JOIN warga w ON k.warga_id = w.id JOIN log_gudang l ON l.warga_id = w.id WHERE k.warna='Hijau' AND k.no_plat LIKE 'DB 8%' AND l.tanggal='2026-10-12';`,
+  require:[/\bjoin\b|\bin\s*\(\s*select\b/i,/log_gudang/i], requireMsg:`Buktikan lewat data: gabungkan dengan log_gudang, jangan langsung menulis nama.`,
+  win:`Stevi Rumengan: pemilik pikap hijau DB 8344 KC, masuk gudang pukul 21.40–23.55, lalu menjual 40 karung kopi di bawah harga pasar. Kasus terpecahkan.` },
+
+/* ---------- BAB 6: SUBQUERY & CASE ---------- */
+{ ch:'sub', concept:'Subquery skalar', title:'Di atas rata-rata',
+  story:`Untuk laporan akhir, atasan ingin tahu kasus mana yang kerugiannya di atas rata-rata semua laporan.`,
+  task:`Tampilkan id, jenis, dan kerugian dari laporan yang kerugiannya lebih besar dari rata-rata kerugian semua laporan.`,
+  explain:`Subquery adalah query di dalam tanda kurung yang hasilnya dipakai query luar. Subquery yang menghasilkan satu nilai bisa dipakai seperti angka biasa di WHERE.`,
+  example:`SELECT * FROM tabel
+WHERE nilai > (SELECT AVG(nilai) FROM tabel);`,
+  hints:[`Rata-rata dihitung dengan (SELECT AVG(kerugian) FROM laporan_polisi)`,`WHERE kerugian > (SELECT AVG(kerugian) FROM laporan_polisi)`],
+  solution:`SELECT id, jenis, kerugian FROM laporan_polisi WHERE kerugian > (SELECT AVG(kerugian) FROM laporan_polisi);`,
+  require:[/\(\s*select\b/i], requireMsg:`Hitung rata-ratanya dengan subquery, jangan menulis angkanya langsung.` },
+
+{ ch:'sub', concept:'IN (subquery)', title:'Siapa di gudang hari itu',
+  story:`Semua yang masuk gudang pada 12 Oktober akan dipanggil sebagai saksi tambahan.`,
+  task:`Tampilkan nama warga yang tercatat di log_gudang pada tanggal 2026-10-12, memakai subquery dengan IN.`,
+  explain:`Subquery yang menghasilkan satu kolom berisi banyak nilai bisa dipakai bersama IN. Ini alternatif JOIN saat kamu hanya butuh kolom dari satu tabel.`,
+  example:`SELECT nama FROM warga
+WHERE id IN (SELECT warga_id FROM tabel_lain WHERE ...);`,
+  hints:[`WHERE id IN (SELECT warga_id FROM log_gudang …)`,`Subquery-nya: SELECT warga_id FROM log_gudang WHERE tanggal = '2026-10-12'`],
+  solution:`SELECT nama FROM warga WHERE id IN (SELECT warga_id FROM log_gudang WHERE tanggal='2026-10-12');`,
+  require:[/\bin\s*\(\s*select\b/i], requireMsg:`Gunakan IN dengan subquery.` },
+
+{ ch:'sub', concept:'CASE WHEN', title:'Label umur kendaraan',
+  story:`Bagian lalu lintas minta semua kendaraan diberi label: Lama untuk buatan sebelum 2015, Baru untuk sisanya.`,
+  task:`Tampilkan no_plat, tahun, dan kolom ketiga berisi 'Lama' jika tahun < 2015, selain itu 'Baru'.`,
+  explain:`CASE WHEN membuat nilai berdasarkan syarat, mirip if-else. Kondisi diperiksa dari atas, yang pertama benar dipakai. ELSE untuk sisanya, dan END menutupnya.`,
+  example:`SELECT nama,
+  CASE WHEN nilai >= 75 THEN 'Lulus'
+       ELSE 'Remedial'
+  END AS status
+FROM tabel;`,
+  hints:[`CASE WHEN tahun < 2015 THEN 'Lama' ELSE 'Baru' END`,`SELECT no_plat, tahun, CASE … END AS kategori FROM kendaraan;`],
+  solution:`SELECT no_plat, tahun, CASE WHEN tahun < 2015 THEN 'Lama' ELSE 'Baru' END AS kategori FROM kendaraan;`,
+  require:[/\bcase\b/i], requireMsg:`Gunakan CASE WHEN.` },
+
+/* ---------- BAB 7: MENGUBAH DATA ---------- */
+{ ch:'ubah', type:'dml', concept:'INSERT', title:'Catat penangkapannya',
+  story:`Stevi Rumengan sudah ditangkap. Penangkapan ini harus dicatat sebagai laporan baru.`,
+  task:`Tambahkan baris ke laporan_polisi: id 9, tanggal 2026-10-22, kota Kota Lembah, jenis Penangkapan, kerugian NULL, deskripsi bebas.`,
+  explain:`INSERT INTO menambah baris baru. Sebutkan kolomnya, lalu nilainya dengan urutan yang sama. NULL ditulis tanpa kutip.`,
+  example:`INSERT INTO tabel (kolom1, kolom2, kolom3)
+VALUES (1, 'teks', NULL);`,
+  hints:[`INSERT INTO laporan_polisi (id, tanggal, kota, jenis, kerugian, deskripsi) VALUES (…);`,`VALUES (9, '2026-10-22', 'Kota Lembah', 'Penangkapan', NULL, 'Pelaku ditangkap')`],
+  solution:`INSERT INTO laporan_polisi (id, tanggal, kota, jenis, kerugian, deskripsi) VALUES (9,'2026-10-22','Kota Lembah','Penangkapan',NULL,'Pelaku pencurian kopi ditangkap');`,
+  verify:[`SELECT id, tanggal, kota, jenis, kerugian FROM laporan_polisi ORDER BY id`],
+  verifyLabel:`Isi laporan_polisi setelah query-mu`,
+  require:[/\binsert\s+into\b/i], requireMsg:`Gunakan INSERT INTO.` },
+
+{ ch:'ubah', type:'dml', concept:'UPDATE', title:'Koreksi nilai kerugian', needWhere:true,
+  story:`Bengkel sudah menghitung kerusakan motor di laporan nomor 4: Rp2.000.000.`,
+  task:`Ubah kerugian laporan dengan id 4 menjadi 2000000. Laporan lain tidak boleh ikut berubah.`,
+  explain:`UPDATE mengubah nilai pada baris yang sudah ada. SET menyebut kolom dan nilai barunya. Selalu tulis WHERE: tanpa WHERE, SEMUA baris ikut berubah.`,
+  example:`UPDATE tabel
+SET kolom = nilai_baru
+WHERE id = ...;`,
+  hints:[`UPDATE laporan_polisi SET kerugian = 2000000 …`,`… WHERE id = 4;`],
+  solution:`UPDATE laporan_polisi SET kerugian = 2000000 WHERE id = 4;`,
+  verify:[`SELECT id, kerugian FROM laporan_polisi ORDER BY id`],
+  verifyLabel:`Kolom kerugian setelah query-mu`,
+  require:[/\bupdate\b/i], requireMsg:`Gunakan UPDATE.` },
+
+{ ch:'ubah', type:'dml', concept:'DELETE', title:'Laporan dicabut', needWhere:true,
+  story:`Kunci gembok balai desa (laporan nomor 6) ternyata terselip di laci. Pelapor mencabut laporannya.`,
+  task:`Hapus laporan dengan id 6 dari laporan_polisi.`,
+  explain:`DELETE FROM menghapus baris. Sama seperti UPDATE, selalu pakai WHERE. DELETE tanpa WHERE mengosongkan seluruh tabel.`,
+  example:`DELETE FROM tabel WHERE id = ...;`,
+  hints:[`DELETE FROM laporan_polisi …`,`… WHERE id = 6;`],
+  solution:`DELETE FROM laporan_polisi WHERE id = 6;`,
+  verify:[`SELECT id, jenis FROM laporan_polisi ORDER BY id`],
+  verifyLabel:`Isi laporan_polisi setelah query-mu`,
+  require:[/\bdelete\s+from\b/i], requireMsg:`Gunakan DELETE FROM.` },
+
+{ ch:'ubah', type:'error', concept:'Constraint PRIMARY KEY', title:'Uji penjaga id ganda',
+  story:`Seorang petugas tidak sengaja mencoba mendaftarkan warga baru dengan id yang sudah dipakai. Buktikan bahwa database akan menolaknya.`,
+  task:`Coba masukkan warga baru dengan id 4 (nama bebas). Level selesai jika database menolak query-mu.`,
+  explain:`Constraint adalah aturan yang dijaga database secara otomatis. PRIMARY KEY dan UNIQUE menolak nilai kembar. Penolakan ini melindungi data dari kesalahan input.`,
+  example:`INSERT INTO warga (id, nama) VALUES (1, 'Coba');
+-- Error: UNIQUE constraint failed: warga.id`,
+  hints:[`INSERT INTO warga (id, nama) VALUES (…);`,`INSERT INTO warga (id, nama) VALUES (4, 'Warga Uji');`],
+  solution:`INSERT INTO warga (id, nama) VALUES (4, 'Warga Uji');`,
+  expectErr:/unique constraint failed/i, require:[/\binsert\b/i], requireMsg:`Gunakan INSERT.`,
+  win:`Primary key menjaga agar setiap id hanya dipakai satu baris.` },
+
+{ ch:'ubah', type:'error', concept:'Constraint FOREIGN KEY', title:'Uji pemilik fiktif',
+  story:`Ada yang mencoba mendaftarkan kendaraan atas nama warga yang tidak ada. Foreign key seharusnya mencegah ini.`,
+  task:`Coba masukkan kendaraan baru dengan warga_id 99 (warga ini tidak ada). Level selesai jika database menolaknya.`,
+  explain:`FOREIGN KEY menolak nilai yang tidak ada di tabel induk. Inilah yang disebut integritas referensial: setiap rujukan harus menunjuk data yang nyata. Di SQLite, pemeriksaan ini aktif lewat PRAGMA foreign_keys = ON (di game ini sudah aktif).`,
+  example:`INSERT INTO kendaraan (no_plat, warga_id)
+VALUES ('DB 1 X', 999);
+-- Error: FOREIGN KEY constraint failed`,
+  hints:[`INSERT INTO kendaraan (no_plat, warga_id, merek) VALUES (…);`,`VALUES ('DB 9999 XX', 99, 'Toyota Rush')`],
+  solution:`INSERT INTO kendaraan (no_plat, warga_id, merek) VALUES ('DB 9999 XX', 99, 'Toyota Rush');`,
+  expectErr:/foreign key constraint failed/i, require:[/\binsert\b/i], requireMsg:`Gunakan INSERT.`,
+  win:`Foreign key memastikan setiap kendaraan selalu punya pemilik yang benar-benar ada di tabel warga.` },
+
+{ ch:'ubah', type:'error', concept:'Constraint NOT NULL', title:'Uji kolom wajib',
+  story:`Kolom tanggal di laporan_polisi dibuat NOT NULL. Laporan tanpa tanggal tidak boleh masuk.`,
+  task:`Coba masukkan laporan baru dengan id 10 dan jenis Kehilangan, tapi tanpa tanggal. Level selesai jika database menolaknya.`,
+  explain:`NOT NULL mewajibkan kolom selalu terisi. Kolom yang tidak kamu sebut di INSERT akan bernilai NULL, sehingga ditolak bila kolom itu NOT NULL.`,
+  example:`INSERT INTO laporan_polisi (id, jenis)
+VALUES (99, 'Uji');
+-- Error: NOT NULL constraint failed: laporan_polisi.tanggal`,
+  hints:[`Sebutkan hanya kolom id dan jenis di INSERT.`,`INSERT INTO laporan_polisi (id, jenis) VALUES (10, 'Kehilangan');`],
+  solution:`INSERT INTO laporan_polisi (id, jenis) VALUES (10, 'Kehilangan');`,
+  expectErr:/not null constraint failed/i, require:[/\binsert\b/i], requireMsg:`Gunakan INSERT.`,
+  win:`NOT NULL memastikan informasi penting tidak pernah kosong.` },
+
+/* ---------- BAB 8: MEMBANGUN STRUKTUR ---------- */
+{ ch:'struktur', type:'ddl', concept:'CREATE TABLE', title:'Tabel barang bukti',
+  story:`Barang bukti kasus perlu dicatat, tapi belum ada tabelnya. Buat dari nol.`,
+  task:`Buat tabel barang_bukti dengan kolom berurutan: id INTEGER sebagai PRIMARY KEY, nama_barang TEXT NOT NULL, jumlah INTEGER.`,
+  explain:`CREATE TABLE membuat tabel baru. Untuk setiap kolom tulis nama, tipe data, lalu constraint-nya (PRIMARY KEY, NOT NULL, UNIQUE). Kolom dipisah koma.`,
+  example:`CREATE TABLE nama_tabel (
+  id    INTEGER PRIMARY KEY,
+  kolom TEXT NOT NULL,
+  angka INTEGER
+);`,
+  hints:[`CREATE TABLE barang_bukti ( … );`,`id INTEGER PRIMARY KEY, nama_barang TEXT NOT NULL, jumlah INTEGER`],
+  solution:`CREATE TABLE barang_bukti (id INTEGER PRIMARY KEY, nama_barang TEXT NOT NULL, jumlah INTEGER);`,
+  verify:[`SELECT name AS kolom, CASE WHEN pk > 0 THEN 'PK' ELSE '' END AS kunci, CASE WHEN pk > 0 THEN '' WHEN "notnull" = 1 THEN 'NOT NULL' ELSE '' END AS wajib FROM pragma_table_info('barang_bukti') ORDER BY cid`],
+  verifyLabel:`Struktur tabel barang_bukti yang terbentuk`,
+  require:[/\bcreate\s+table\b/i], requireMsg:`Gunakan CREATE TABLE.` },
+
+{ ch:'struktur', type:'ddl', concept:'FOREIGN KEY', title:'Barang bukti milik laporan',
+  story:`Setiap barang bukti harus tercatat milik laporan yang mana. Tambahkan foreign key ke laporan_polisi.`,
+  task:`Buat tabel barang_bukti: id INTEGER PRIMARY KEY, laporan_id INTEGER yang menjadi FOREIGN KEY ke laporan_polisi(id), dan nama_barang TEXT NOT NULL.`,
+  explain:`FOREIGN KEY bisa ditulis di baris kolomnya (laporan_id INTEGER REFERENCES laporan_polisi(id)) atau di akhir sebagai FOREIGN KEY (laporan_id) REFERENCES laporan_polisi(id). Keduanya sama.`,
+  example:`CREATE TABLE anak (
+  id       INTEGER PRIMARY KEY,
+  induk_id INTEGER,
+  FOREIGN KEY (induk_id) REFERENCES induk(id)
+);`,
+  hints:[`Urutan kolom: id, laporan_id, nama_barang.`,`Tambahkan di akhir: FOREIGN KEY (laporan_id) REFERENCES laporan_polisi(id)`],
+  solution:`CREATE TABLE barang_bukti (id INTEGER PRIMARY KEY, laporan_id INTEGER, nama_barang TEXT NOT NULL, FOREIGN KEY (laporan_id) REFERENCES laporan_polisi(id));`,
+  verify:[`SELECT name AS kolom, CASE WHEN pk > 0 THEN 'PK' ELSE '' END AS kunci, CASE WHEN pk > 0 THEN '' WHEN "notnull" = 1 THEN 'NOT NULL' ELSE '' END AS wajib FROM pragma_table_info('barang_bukti') ORDER BY cid`,
+          `SELECT "from" AS kolom, "table" AS merujuk_tabel, COALESCE("to",'id') AS merujuk_kolom FROM pragma_foreign_key_list('barang_bukti') ORDER BY "from"`],
+  verifyLabel:`Struktur barang_bukti`,
+  require:[/\bcreate\s+table\b/i,/\breferences\b/i], requireMsg:`Gunakan CREATE TABLE dengan REFERENCES.` },
+
+{ ch:'struktur', type:'dml', concept:'INSERT banyak baris', title:'Isi barang buktinya',
+  setup:`CREATE TABLE barang_bukti (id INTEGER PRIMARY KEY, laporan_id INTEGER REFERENCES laporan_polisi(id), nama_barang TEXT NOT NULL);`,
+  extraTables:[['barang_bukti',[['id','P'],['laporan_id','F'],['nama_barang']]]],
+  story:`Tabel barang_bukti sudah dibuat atasanmu. Ada dua barang bukti dari laporan pencurian kopi (id 3).`,
+  task:`Masukkan dua baris ke barang_bukti dalam satu perintah: (1, 3, 'Karung kopi kosong') dan (2, 3, 'Rekaman CCTV gudang').`,
+  explain:`Satu INSERT bisa menambah banyak baris sekaligus: tulis beberapa kelompok nilai setelah VALUES, dipisah koma.`,
+  example:`INSERT INTO tabel (a, b) VALUES
+  (1, 'x'),
+  (2, 'y');`,
+  hints:[`INSERT INTO barang_bukti (id, laporan_id, nama_barang) VALUES (…), (…);`,`VALUES (1, 3, 'Karung kopi kosong'), (2, 3, 'Rekaman CCTV gudang')`],
+  solution:`INSERT INTO barang_bukti (id, laporan_id, nama_barang) VALUES (1, 3, 'Karung kopi kosong'), (2, 3, 'Rekaman CCTV gudang');`,
+  verify:[`SELECT * FROM barang_bukti ORDER BY id`],
+  verifyLabel:`Isi barang_bukti setelah query-mu`,
+  require:[/\binsert\b/i], requireMsg:`Gunakan INSERT.` },
+
+{ ch:'struktur', type:'ddl', concept:'ALTER TABLE', title:'Kolom status laporan',
+  story:`Kepolisian ingin tahu status setiap laporan: masih diproses atau sudah selesai. Tabelnya sudah berisi data, jadi tidak boleh dibuat ulang.`,
+  task:`Tambahkan kolom status bertipe TEXT ke tabel laporan_polisi.`,
+  explain:`ALTER TABLE mengubah struktur tabel yang sudah ada tanpa menghapus datanya. ADD COLUMN menambah kolom baru di paling akhir; baris lama berisi NULL di kolom itu.`,
+  example:`ALTER TABLE tabel ADD COLUMN kolom_baru TEXT;`,
+  hints:[`ALTER TABLE laporan_polisi ADD COLUMN …`,`ALTER TABLE laporan_polisi ADD COLUMN status TEXT;`],
+  solution:`ALTER TABLE laporan_polisi ADD COLUMN status TEXT;`,
+  verify:[`SELECT name AS kolom, UPPER(type) AS tipe FROM pragma_table_info('laporan_polisi') ORDER BY cid`],
+  verifyLabel:`Kolom laporan_polisi setelah query-mu`,
+  require:[/\balter\s+table\b/i], requireMsg:`Gunakan ALTER TABLE.` },
+
+{ ch:'struktur', type:'ddl', concept:'Primary key gabungan', title:'Tabel penghubung pelaku', erd:true,
+  story:`Satu laporan bisa punya beberapa pelaku, dan satu orang bisa terlibat di beberapa laporan. Ini relasi N:M, jadi butuh tabel penghubung.`,
+  task:`Buat tabel pelaku_laporan dengan kolom laporan_id INTEGER dan warga_id INTEGER. Jadikan pasangan keduanya PRIMARY KEY, dan buat masing-masing menjadi FOREIGN KEY ke laporan_polisi(id) dan warga(id).`,
+  explain:`Primary key bisa terdiri dari beberapa kolom: PRIMARY KEY (a, b). Artinya pasangan nilai a dan b tidak boleh kembar, walau masing-masing boleh muncul berkali-kali. Ini pola standar tabel penghubung N:M.`,
+  example:`CREATE TABLE penghubung (
+  a_id INTEGER,
+  b_id INTEGER,
+  PRIMARY KEY (a_id, b_id),
+  FOREIGN KEY (a_id) REFERENCES tabel_a(id),
+  FOREIGN KEY (b_id) REFERENCES tabel_b(id)
+);`,
+  hints:[`Tulis kedua kolom dulu, lalu PRIMARY KEY (laporan_id, warga_id).`,`Tambahkan FOREIGN KEY (laporan_id) REFERENCES laporan_polisi(id) dan FOREIGN KEY (warga_id) REFERENCES warga(id)`],
+  solution:`CREATE TABLE pelaku_laporan (laporan_id INTEGER, warga_id INTEGER, PRIMARY KEY (laporan_id, warga_id), FOREIGN KEY (laporan_id) REFERENCES laporan_polisi(id), FOREIGN KEY (warga_id) REFERENCES warga(id));`,
+  verify:[`SELECT name AS kolom, CASE WHEN pk > 0 THEN 'PK' ELSE '' END AS kunci FROM pragma_table_info('pelaku_laporan') ORDER BY cid`,
+          `SELECT "from" AS kolom, "table" AS merujuk_tabel, COALESCE("to",'id') AS merujuk_kolom FROM pragma_foreign_key_list('pelaku_laporan') ORDER BY "from"`],
+  verifyLabel:`Struktur pelaku_laporan`,
+  require:[/\bcreate\s+table\b/i,/primary\s+key\s*\(/i], requireMsg:`Gunakan PRIMARY KEY (laporan_id, warga_id).`,
+  win:`Kamu sudah merancang tabel penghubung N:M sendiri. Seluruh kurikulum selesai.` },
+];
+
+/* ===================== LEVEL TAMBAHAN ===================== */
+const EXTRA = [
+/* ---- dasar ---- */
+{ ch:'dasar', after:'Primary key', type:'quiz', concept:'Jenis kunci', title:'NIK, id, atau keduanya?', erd:true,
+  story:`Tabel <code>ktp</code> memakai NIK sebagai primary key, sementara tabel <code>warga</code> memakai angka id buatan. Keduanya sah, tapi jenisnya berbeda.`,
+  explain:`Candidate key adalah setiap kolom (atau gabungan kolom) yang bisa menjadi primary key karena unik dan selalu terisi. Dari semua kandidat, satu dipilih menjadi primary key. Natural key berasal dari dunia nyata dan punya arti (NIK, nomor plat). Surrogate key adalah angka buatan tanpa arti (warga.id). Composite key adalah kunci yang terdiri dari beberapa kolom.`,
+  example:`ktp.nik            → natural key (dari dunia nyata)
+warga.id           → surrogate key (angka buatan)
+(laporan_id, warga_id) → composite key`,
+  q:`Di tabel ktp, kolom nik dijadikan primary key. nik termasuk jenis kunci apa?`,
+  options:[[`Natural key`,``],
+           [`Surrogate key`,`Surrogate key adalah angka buatan sistem tanpa arti di dunia nyata, seperti warga.id. NIK punya arti dan diterbitkan pemerintah.`],
+           [`Foreign key`,`Di tabel ktp, nik tidak merujuk ke tabel lain. Yang menjadi foreign key adalah warga_id.`],
+           [`Composite key`,`Composite key terdiri dari beberapa kolom. nik hanya satu kolom.`]], answer:0,
+  why:`NIK adalah natural key. Kelemahan natural key: nilainya bisa berubah atau salah input di dunia nyata, sehingga banyak desain memilih surrogate key sebagai primary key dan menjadikan natural key sebagai UNIQUE.` },
+{ ch:'dasar', after:'Normalisasi', type:'quiz', concept:'Kategori perintah SQL', title:'Lima keluarga perintah',
+  story:`Sebelum menulis query, kenali dulu keluarga perintah SQL. Setiap keluarga punya tugas yang berbeda.`,
+  explain:`DDL (Data Definition Language) mengatur struktur: CREATE, ALTER, DROP. DML (Data Manipulation Language) mengubah isi: INSERT, UPDATE, DELETE. DQL (Data Query Language) membaca data: SELECT. DCL (Data Control Language) mengatur hak akses: GRANT, REVOKE. TCL (Transaction Control Language) mengatur transaksi: BEGIN, COMMIT, ROLLBACK.`,
+  example:`DDL → CREATE, ALTER, DROP
+DML → INSERT, UPDATE, DELETE
+DQL → SELECT
+DCL → GRANT, REVOKE
+TCL → BEGIN, COMMIT, ROLLBACK`,
+  q:`CREATE TABLE, ALTER TABLE, dan DROP TABLE termasuk keluarga perintah apa?`,
+  options:[[`DML`,`DML mengubah isi tabel (INSERT, UPDATE, DELETE), bukan strukturnya.`],
+           [`DDL`,``],
+           [`DQL`,`DQL hanya membaca data dengan SELECT.`],
+           [`TCL`,`TCL mengatur transaksi: BEGIN, COMMIT, ROLLBACK.`]], answer:1,
+  why:`Ketiganya mengubah struktur database, jadi termasuk DDL. Kamu akan memakai semua keluarga ini di bab-bab berikutnya.` },
+
+/* ---- normalisasi ---- */
+{ ch:'norm', type:'quiz', concept:'Anomali update', title:'Nomor HP yang kembar',
+  story:`Di gudang arsip kamu menemukan tabel lama yang dibuat bertahun-tahun lalu. Semua data dijejalkan ke satu tabel.`,
+  explain:`Tabel yang menyimpan fakta yang sama di banyak baris rawan anomali. Anomali update: satu fakta harus diubah di banyak baris, dan kalau ada yang terlewat datanya jadi bertentangan. Normalisasi mencegah ini dengan memecah tabel sehingga setiap fakta hanya tersimpan sekali.`,
+  example:`laporan_lama
+id | tanggal    | pelapor     | hp_pelapor
+1  | 2026-09-02 | Rina Lumowa | 0812-111
+2  | 2026-09-10 | Rina Lumowa | 0812-111
+3  | 2026-09-15 | Ayu Pantouw | 0813-222`,
+  q:`Rina mengganti nomor HP-nya. Petugas hanya mengubah baris id 1. Apa akibatnya?`,
+  options:[[`Data bertentangan: Rina tercatat punya dua nomor HP berbeda`,``],
+           [`Tidak ada masalah, baris 2 adalah laporan lain`,`Baris 2 juga menyimpan nomor HP Rina. Sekarang dua baris berisi dua nomor berbeda untuk orang yang sama.`],
+           [`Database otomatis memperbarui baris 2`,`Database tidak tahu bahwa kedua baris membicarakan orang yang sama.`],
+           [`Baris 2 otomatis terhapus`,`UPDATE tidak menghapus baris apa pun.`]], answer:0,
+  why:`Itulah anomali update. Solusinya: simpan data pelapor di tabel sendiri (pelapor: id, nama, hp), lalu laporan cukup menyimpan pelapor_id.` },
+{ ch:'norm', type:'quiz', concept:'Anomali insert & delete', title:'Data yang ikut hilang',
+  story:`Masih di tabel laporan_lama yang sama. Laporan nomor 3 ternyata salah input dan akan dihapus.`,
+  explain:`Anomali delete: menghapus satu fakta ikut menghapus fakta lain yang tidak berhubungan. Anomali insert: kamu tidak bisa menyimpan suatu fakta sebelum ada fakta lain. Misalnya, data pelapor baru tidak bisa dicatat sebelum ia membuat laporan.`,
+  example:`laporan_lama
+id | tanggal    | pelapor     | hp_pelapor
+1  | 2026-09-02 | Rina Lumowa | 0812-111
+2  | 2026-09-10 | Rina Lumowa | 0812-111
+3  | 2026-09-15 | Ayu Pantouw | 0813-222   ← satu-satunya baris Ayu`,
+  q:`Baris id 3 adalah satu-satunya baris milik Ayu. Jika baris itu dihapus, apa yang terjadi?`,
+  options:[[`Hanya laporan nomor 3 yang hilang`,`Bukan hanya laporannya. Nama dan nomor HP Ayu juga hanya tersimpan di baris itu.`],
+           [`Laporan dan seluruh data kontak Ayu ikut hilang`,``],
+           [`Database menolak penghapusan`,`Tidak ada constraint yang mencegahnya.`],
+           [`Data Ayu dipindahkan ke baris lain`,`Database tidak memindahkan data secara otomatis.`]], answer:1,
+  why:`Anomali delete. Jika data pelapor punya tabel sendiri, menghapus laporan tidak menyentuh data orangnya.` },
+{ ch:'norm', type:'quiz', concept:'1NF', title:'Satu sel, satu nilai',
+  story:`Tabel arsip berikutnya menyimpan saksi dengan cara yang aneh.`,
+  explain:`Bentuk normal pertama (1NF) punya tiga syarat: setiap sel berisi satu nilai atomik (bukan daftar), tidak ada kelompok kolom berulang (saksi1, saksi2, saksi3), dan setiap baris bisa dibedakan lewat primary key.`,
+  example:`✗ laporan(id, tanggal, saksi)
+   3 | 2026-10-12 | "Rina, Fandi, Jefry"
+✗ laporan(id, tanggal, saksi1, saksi2, saksi3)
+✓ saksi(laporan_id, warga_id)  -- satu baris per saksi`,
+  q:`Mana yang melanggar 1NF?`,
+  options:[[`Kolom saksi berisi "Rina, Fandi, Jefry"`,``],
+           [`Kolom kerugian bernilai NULL`,`NULL boleh di 1NF. Itu tetap satu nilai, yaitu "tidak diketahui".`],
+           [`Tabel punya primary key id`,`Justru primary key adalah salah satu syarat 1NF.`],
+           [`Kolom tanggal bertipe TEXT`,`Tipe data tidak menentukan 1NF.`]], answer:0,
+  why:`Daftar dipisah koma bukan nilai atomik. Kamu tidak bisa menghitung, mencari, atau menghubungkan saksi dengan rapi. Pecah menjadi tabel saksi dengan satu baris per saksi.` },
+{ ch:'norm', type:'quiz', concept:'Functional dependency', title:'Siapa menentukan siapa',
+  story:`Untuk menilai 2NF dan 3NF, kamu perlu satu alat: ketergantungan fungsional.`,
+  explain:`Functional dependency A → B dibaca "A menentukan B": jika nilai A diketahui, nilai B pasti hanya satu. Contoh: nik → nama, karena satu NIK hanya milik satu orang. Sebaliknya nama → nik tidak berlaku, karena dua orang bisa bernama sama.`,
+  example:`nik      → nama, alamat
+no_plat  → merek, warna, nik
+nama    ↛ nik   (nama bisa kembar)`,
+  q:`Pernyataan no_plat → merek artinya…`,
+  options:[[`Setiap merek hanya punya satu nomor plat`,`Arahnya terbalik. Satu merek bisa dipakai banyak kendaraan.`],
+           [`Jika no_plat diketahui, mereknya pasti hanya satu`,``],
+           [`no_plat dan merek selalu bernilai sama`,`Keduanya kolom berbeda dengan isi berbeda.`],
+           [`merek adalah foreign key ke no_plat`,`Functional dependency bukan foreign key. Ia menggambarkan aturan di dalam data.`]], answer:1,
+  why:`Kolom di sebelah kiri panah menentukan kolom di sebelah kanan. Primary key yang baik menentukan semua kolom lain di tabelnya.` },
+{ ch:'norm', type:'quiz', concept:'2NF', title:'Tergantung sebagian kunci',
+  story:`Arsip tilang lama memakai primary key gabungan (no_plat, kode_pasal).`,
+  explain:`Bentuk normal kedua (2NF): sudah 1NF, dan setiap kolom bukan kunci bergantung pada SELURUH primary key, bukan hanya sebagian. Pelanggaran 2NF hanya mungkin terjadi pada tabel dengan primary key gabungan.`,
+  example:`tilang(no_plat, kode_pasal, merek, denda)
+PK = (no_plat, kode_pasal)
+no_plat    → merek
+kode_pasal → denda`,
+  q:`Kenapa tabel tilang di atas belum memenuhi 2NF?`,
+  options:[[`Karena primary key-nya terdiri dari dua kolom`,`Primary key gabungan itu sah. Masalahnya ada pada kolom yang bergantung pada sebagian kunci.`],
+           [`Karena merek hanya bergantung pada no_plat dan denda hanya pada kode_pasal`,``],
+           [`Karena ada kolom bertipe angka`,`Tipe data tidak ada hubungannya dengan 2NF.`],
+           [`Karena tabelnya belum memenuhi 1NF`,`Setiap selnya sudah berisi satu nilai, jadi tabel ini sudah 1NF.`]], answer:1,
+  why:`Pecah menjadi kendaraan(no_plat, merek), pasal(kode_pasal, denda), dan tilang(no_plat, kode_pasal). Setiap kolom kini bergantung pada seluruh kunci tabelnya.` },
+{ ch:'norm', type:'quiz', concept:'3NF', title:'Tergantung lewat perantara',
+  story:`Tabel warga di arsip lama menyimpan nama lurah di setiap baris warga.`,
+  explain:`Bentuk normal ketiga (3NF): sudah 2NF, dan tidak ada ketergantungan transitif, yaitu kolom bukan kunci yang bergantung pada kolom bukan kunci lain. Ringkasnya: setiap kolom bergantung pada kunci, seluruh kunci, dan hanya kunci.`,
+  example:`warga_lama(id, nama, kelurahan, lurah)
+id        → kelurahan
+kelurahan → lurah     ← lewat perantara
+Perbaikan: kelurahan(nama, lurah)
+           warga(id, nama, kelurahan)`,
+  q:`Kenapa warga_lama belum memenuhi 3NF?`,
+  options:[[`Karena lurah bergantung pada kelurahan, yang bukan kunci`,``],
+           [`Karena nama warga bisa kembar`,`Nama boleh kembar. Primary key-nya id.`],
+           [`Karena tabelnya tidak punya foreign key`,`Foreign key bukan syarat 3NF.`],
+           [`Karena kolom lurah bisa NULL`,`NULL tidak menentukan bentuk normal.`]], answer:0,
+  why:`id → kelurahan → lurah adalah ketergantungan transitif. Jika lurah berganti, kamu harus mengubah banyak baris (anomali update lagi). Pindahkan lurah ke tabel kelurahan.` },
+{ ch:'norm', concept:'Mendeteksi data ganda', title:'Seberapa parah arsipnya',
+  setup:ARSIP, extraTables:[T_ARSIP],
+  story:`Arsip pendaftaran kendaraan lama tersimpan di tabel <code>arsip_kendaraan</code>. Data pemiliknya ikut disalin di setiap kendaraan.`,
+  task:`Tampilkan nik, nama_pemilik, dan jumlah kendaraannya, hanya untuk pemilik yang datanya muncul di lebih dari satu baris.`,
+  explain:`Data ganda bisa dideteksi dengan GROUP BY pada kolom yang seharusnya unik, lalu HAVING COUNT(*) > 1. Setiap baris tambahan adalah salinan yang berpotensi menimbulkan anomali.`,
+  example:`SELECT kolom, COUNT(*)
+FROM tabel
+GROUP BY kolom
+HAVING COUNT(*) > 1;`,
+  hints:[`GROUP BY nik, nama_pemilik`,`HAVING COUNT(*) > 1`],
+  solution:`SELECT nik, nama_pemilik, COUNT(*) AS jumlah FROM arsip_kendaraan GROUP BY nik, nama_pemilik HAVING COUNT(*) > 1;`,
+  require:[/\bgroup\s+by\b/i,/\bhaving\b/i], requireMsg:`Gunakan GROUP BY dan HAVING.` },
+{ ch:'norm', type:'dml', concept:'Memecah tabel (1)', title:'Tabel pemilik',
+  setup:ARSIP, extraTables:[T_ARSIP],
+  story:`Langkah pertama normalisasi: pindahkan data pemilik ke tabelnya sendiri, satu baris per orang.`,
+  task:`Buat tabel pemilik (nik TEXT PRIMARY KEY, nama TEXT NOT NULL, alamat TEXT), lalu isi dari arsip_kendaraan tanpa duplikat.`,
+  explain:`INSERT INTO … SELECT memasukkan hasil query ke tabel lain. Dengan SELECT DISTINCT, setiap pemilik hanya masuk sekali. Kamu bisa menulis beberapa perintah sekaligus, dipisah titik koma.`,
+  example:`CREATE TABLE baru (...);
+INSERT INTO baru (a, b)
+SELECT DISTINCT x, y FROM lama;`,
+  hints:[`Tulis CREATE TABLE pemilik (…); lalu INSERT INTO pemilik (nik, nama, alamat) SELECT …`,`SELECT DISTINCT nik, nama_pemilik, alamat_pemilik FROM arsip_kendaraan`],
+  solution:`CREATE TABLE pemilik (nik TEXT PRIMARY KEY, nama TEXT NOT NULL, alamat TEXT);
+INSERT INTO pemilik (nik, nama, alamat) SELECT DISTINCT nik, nama_pemilik, alamat_pemilik FROM arsip_kendaraan;`,
+  verify:[V_STRUKTUR('pemilik'), `SELECT * FROM pemilik ORDER BY nik`],
+  vlabels:[`Struktur tabel pemilik`,`Isi tabel pemilik`],
+  require:[/\bcreate\s+table\b/i,/\binsert\s+into\b[\s\S]*\bselect\b/i], requireMsg:`Gunakan CREATE TABLE lalu INSERT INTO … SELECT.` },
+{ ch:'norm', type:'dml', concept:'Memecah tabel (2)', title:'Kendaraan yang merujuk pemilik',
+  setup:ARSIP+PEMILIK, extraTables:[T_ARSIP,T_PEMILIK],
+  story:`Tabel pemilik sudah jadi. Sekarang kendaraan cukup menyimpan nik sebagai foreign key, tanpa nama dan alamat.`,
+  task:`Buat tabel kendaraan_baru (no_plat TEXT PRIMARY KEY, merek TEXT, warna TEXT, nik TEXT yang merujuk pemilik(nik)), lalu isi dari arsip_kendaraan.`,
+  explain:`Setelah dipecah, setiap fakta tersimpan sekali: data orang di pemilik, data kendaraan di kendaraan_baru. Kolom nik menjadi foreign key yang menghubungkan keduanya.`,
+  example:`CREATE TABLE anak (
+  kode TEXT PRIMARY KEY,
+  induk_kode TEXT REFERENCES induk(kode)
+);
+INSERT INTO anak SELECT … FROM lama;`,
+  hints:[`nik TEXT REFERENCES pemilik(nik)`,`INSERT INTO kendaraan_baru (no_plat, merek, warna, nik) SELECT no_plat, merek, warna, nik FROM arsip_kendaraan;`],
+  solution:`CREATE TABLE kendaraan_baru (no_plat TEXT PRIMARY KEY, merek TEXT, warna TEXT, nik TEXT REFERENCES pemilik(nik));
+INSERT INTO kendaraan_baru (no_plat, merek, warna, nik) SELECT no_plat, merek, warna, nik FROM arsip_kendaraan;`,
+  verify:[V_FK('kendaraan_baru'), `SELECT * FROM kendaraan_baru ORDER BY no_plat`],
+  vlabels:[`Foreign key kendaraan_baru`,`Isi kendaraan_baru`],
+  require:[/\bcreate\s+table\b/i,/\breferences\b/i], requireMsg:`Gunakan CREATE TABLE dengan REFERENCES.` },
+{ ch:'norm', concept:'Dekomposisi tanpa kehilangan', title:'Buktikan tidak ada yang hilang',
+  setup:ARSIP+PEMILIK+KBARU, extraTables:[T_ARSIP,T_PEMILIK,T_KBARU],
+  story:`Normalisasi yang benar bersifat lossless: tabel asli bisa disusun ulang persis dari tabel-tabel hasil pecahan.`,
+  task:`Gabungkan kendaraan_baru dan pemilik untuk menampilkan no_plat, merek, warna, nik, nama, dan alamat (7 baris, sama dengan arsip).`,
+  explain:`Dekomposisi lossless berarti JOIN tabel-tabel hasil pecahan menghasilkan data yang sama dengan tabel asli, tanpa baris hilang atau baris palsu. Ini cara membuktikan normalisasimu benar.`,
+  example:`SELECT ...
+FROM anak a
+JOIN induk i ON a.induk_kode = i.kode;`,
+  hints:[`FROM kendaraan_baru k JOIN pemilik p ON k.nik = p.nik`,`SELECT k.no_plat, k.merek, k.warna, p.nik, p.nama, p.alamat …`],
+  solution:`SELECT k.no_plat, k.merek, k.warna, p.nik, p.nama, p.alamat FROM kendaraan_baru k JOIN pemilik p ON k.nik = p.nik;`,
+  require:[/\bjoin\b/i], requireMsg:`Gunakan JOIN antara kendaraan_baru dan pemilik.`,
+  win:`7 baris kembali utuh. Data pemilik kini tersimpan sekali saja, jadi tidak ada lagi anomali update, insert, maupun delete.` },
+
+/* ---- saring ---- */
+{ ch:'saring', after:'OR & IN', concept:'NOT', title:'Selain kopi',
+  story:`Untuk menyingkirkan orang yang tidak relevan, kamu juga perlu tahu warga yang <em>bukan</em> petani kopi dan bukan pedagang.`,
+  task:`Tampilkan nama dan pekerjaan warga yang pekerjaannya bukan Petani kopi dan bukan Pedagang.`,
+  explain:`NOT membalik syarat: NOT IN, NOT LIKE, NOT BETWEEN, IS NOT NULL. Operator <> atau != berarti "tidak sama dengan". Ingat: NOT IN tidak akan cocok dengan baris yang nilainya NULL.`,
+  example:`WHERE kota NOT IN ('A', 'B')
+WHERE nama NOT LIKE 'R%'
+WHERE kerugian IS NOT NULL`,
+  hints:[`WHERE pekerjaan NOT IN (…)`,`WHERE pekerjaan NOT IN ('Petani kopi', 'Pedagang')`],
+  solution:`SELECT nama, pekerjaan FROM warga WHERE pekerjaan NOT IN ('Petani kopi','Pedagang');`,
+  require:[/\bnot\b|<>|!=/i], requireMsg:`Gunakan NOT atau <>.`,
+  alt:[`SELECT nama, pekerjaan FROM warga WHERE pekerjaan <> 'Petani kopi' AND pekerjaan <> 'Pedagang';`] },
+
+/* ---- ringkas ---- */
+{ ch:'ringkas', after:'ORDER BY', concept:'ORDER BY banyak kolom', title:'Urut per profesi',
+  story:`Daftar warga untuk rapat harus dikelompokkan per pekerjaan, dan di dalam tiap pekerjaan yang termuda di atas.`,
+  task:`Tampilkan nama, pekerjaan, dan tahun_lahir warga, urut menurut pekerjaan (A–Z), lalu tahun_lahir dari yang terbesar.`,
+  explain:`ORDER BY bisa memakai beberapa kolom. Kolom kedua hanya dipakai untuk memecah urutan baris yang nilai kolom pertamanya sama. Setiap kolom punya ASC/DESC sendiri.`,
+  example:`ORDER BY kota ASC, tanggal DESC`,
+  hints:[`ORDER BY pekerjaan, tahun_lahir …`,`ORDER BY pekerjaan ASC, tahun_lahir DESC`],
+  solution:`SELECT nama, pekerjaan, tahun_lahir FROM warga ORDER BY pekerjaan ASC, tahun_lahir DESC;`,
+  orderMatters:true, require:[/\border\s+by\b[^;]*,/i], requireMsg:`Urutkan dengan dua kolom di ORDER BY.` },
+{ ch:'ringkas', after:'DESC + LIMIT', concept:'LIMIT + OFFSET', title:'Halaman kedua',
+  story:`Aplikasi kepolisian menampilkan laporan 5 per halaman. Petugas membuka halaman 2.`,
+  task:`Tampilkan semua kolom laporan_polisi untuk halaman 2, jika setiap halaman berisi 5 laporan yang diurutkan menurut id.`,
+  explain:`OFFSET melewati sejumlah baris sebelum mulai mengambil. Halaman ke-n dengan ukuran k memakai LIMIT k OFFSET (n−1)×k. Selalu sertakan ORDER BY agar halamannya konsisten.`,
+  example:`SELECT * FROM tabel
+ORDER BY id
+LIMIT 10 OFFSET 20;  -- halaman 3`,
+  hints:[`Halaman 2 melewati 5 baris pertama.`,`ORDER BY id LIMIT 5 OFFSET 5`],
+  solution:`SELECT * FROM laporan_polisi ORDER BY id LIMIT 5 OFFSET 5;`,
+  orderMatters:true, require:[/\boffset\b|\blimit\s+\d+\s*,/i], requireMsg:`Gunakan OFFSET.` },
+{ ch:'ringkas', after:'LIMIT + OFFSET', type:'quiz', concept:'Urutan eksekusi', title:'Kenapa alias tidak dikenal',
+  story:`Seorang rekan menulis query berikut dan bingung kenapa muncul error "no such column: rugi".`,
+  explain:`SQL ditulis dengan urutan SELECT → FROM → WHERE → …, tapi dijalankan dengan urutan berbeda: FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT. Alias dibuat di tahap SELECT, sehingga belum dikenal di WHERE, GROUP BY standar, dan HAVING standar, tapi sudah bisa dipakai di ORDER BY.`,
+  example:`SELECT jenis, kerugian AS rugi
+FROM laporan_polisi
+WHERE rugi > 1000000;   -- error
+
+urutan jalan: FROM → WHERE → GROUP BY
+→ HAVING → SELECT → ORDER BY → LIMIT`,
+  q:`Kenapa query di atas error?`,
+  options:[[`WHERE dijalankan sebelum SELECT, jadi alias rugi belum ada`,``],
+           [`Alias tidak boleh memakai huruf kecil`,`Huruf kecil boleh. Masalahnya ada pada urutan eksekusi.`],
+           [`Kolom kerugian tidak ada`,`Kolom kerugian ada. Yang tidak dikenal adalah alias rugi.`],
+           [`AS hanya boleh dipakai pada fungsi agregat`,`AS boleh dipakai pada kolom apa saja.`]], answer:0,
+  why:`Tulis kolom aslinya di WHERE: WHERE kerugian > 1000000. Alias boleh dipakai di ORDER BY karena ORDER BY dijalankan setelah SELECT. (SQLite sebenarnya cukup longgar, tapi database lain akan menolak.)` },
+{ ch:'ringkas', after:'COUNT', concept:'COUNT DISTINCT', title:'Berapa orang berbeda',
+  story:`Buku tamu gudang punya 13 baris, tapi banyak yang orangnya sama.`,
+  task:`Hitung berapa warga berbeda yang pernah tercatat di log_gudang. Hasilnya satu angka.`,
+  explain:`COUNT(DISTINCT kolom) menghitung nilai unik saja. COUNT(*) menghitung semua baris, termasuk yang orangnya sama.`,
+  example:`SELECT COUNT(DISTINCT kolom) FROM tabel;`,
+  hints:[`COUNT(DISTINCT …)`,`SELECT COUNT(DISTINCT warga_id) FROM log_gudang;`],
+  solution:`SELECT COUNT(DISTINCT warga_id) FROM log_gudang;`,
+  require:[/count\s*\(\s*distinct/i], requireMsg:`Gunakan COUNT(DISTINCT …).` },
+
+/* ---- fungsi ---- */
+{ ch:'fungsi', concept:'Kolom hitungan', title:'Nilai setiap penjualan',
+  story:`Untuk menaksir keuntungan pelaku, hitung nilai uang dari setiap penjualan kopi.`,
+  task:`Dari penjualan_kopi, tampilkan id, karung, harga_per_karung, dan kolom omzet berisi karung × harga_per_karung.`,
+  explain:`SELECT bisa menghitung ekspresi dari kolom lain: + − * / dan %. Hasilnya kolom baru di hasil query, bukan kolom yang tersimpan di tabel. Beri nama dengan AS. Hati-hati: pembagian dua bilangan bulat menghasilkan bilangan bulat (7/2 = 3), jadi gunakan 7.0/2 untuk hasil desimal.`,
+  example:`SELECT harga, jumlah, harga * jumlah AS total
+FROM tabel;`,
+  hints:[`karung * harga_per_karung AS omzet`,`SELECT id, karung, harga_per_karung, karung * harga_per_karung AS omzet FROM penjualan_kopi;`],
+  solution:`SELECT id, karung, harga_per_karung, karung * harga_per_karung AS omzet FROM penjualan_kopi;`,
+  require:[/\*/], requireMsg:`Hitung omzet dengan operator *.` },
+{ ch:'fungsi', concept:'ROUND + AVG', title:'Rata-rata harga per penjual',
+  story:`Bandingkan harga jual rata-rata setiap penjual. Angka desimal yang panjang menyulitkan pembaca.`,
+  task:`Tampilkan warga_id dan rata-rata harga_per_karung setiap penjual, dibulatkan tanpa desimal dengan ROUND.`,
+  explain:`ROUND(nilai) membulatkan ke bilangan bulat terdekat, dan ROUND(nilai, 2) menyisakan 2 desimal. Fungsi bisa dibungkus fungsi lain: ROUND(AVG(...)).`,
+  example:`SELECT kelompok, ROUND(AVG(nilai)) AS rata2
+FROM tabel
+GROUP BY kelompok;`,
+  hints:[`ROUND(AVG(harga_per_karung))`,`… FROM penjualan_kopi GROUP BY warga_id;`],
+  solution:`SELECT warga_id, ROUND(AVG(harga_per_karung)) AS rata_harga FROM penjualan_kopi GROUP BY warga_id;`,
+  require:[/\bround\s*\(/i,/\bavg\s*\(/i], requireMsg:`Gunakan ROUND dan AVG.`,
+  win:`warga_id 4 menjual rata-rata Rp916.667 per karung, jauh di bawah penjual lain.` },
+{ ch:'fungsi', concept:'Fungsi teks', title:'Kode singkat warga',
+  story:`Sistem lama butuh kode singkat 3 huruf kapital untuk setiap warga.`,
+  task:`Tampilkan nama dan 3 huruf pertama nama dalam huruf kapital.`,
+  explain:`Fungsi teks yang umum: UPPER (huruf kapital), LOWER (huruf kecil), LENGTH (panjang), SUBSTR(teks, mulai, panjang) mengambil potongan (mulai dari posisi 1), TRIM membuang spasi di tepi, REPLACE mengganti teks.`,
+  example:`SELECT UPPER('kopi');           -- KOPI
+SELECT SUBSTR('Robusta', 1, 3); -- Rob
+SELECT LENGTH('Lembah');        -- 6`,
+  hints:[`SUBSTR(nama, 1, 3)`,`UPPER(SUBSTR(nama, 1, 3))`],
+  solution:`SELECT nama, UPPER(SUBSTR(nama, 1, 3)) AS kode FROM warga;`,
+  require:[/\bupper\s*\(/i,/\bsubstr(ing)?\s*\(/i], requireMsg:`Gunakan UPPER dan SUBSTR.` },
+{ ch:'fungsi', concept:'Gabung teks ||', title:'Label kendaraan',
+  story:`Petugas lapangan minta label singkat untuk setiap pikap, misalnya "Toyota Hilux - Hijau".`,
+  task:`Untuk kendaraan berjenis Pikap, tampilkan no_plat dan label berisi merek, spasi-strip-spasi, lalu warna.`,
+  explain:`Operator || menyambung teks di SQLite dan PostgreSQL. MySQL memakai fungsi CONCAT(a, b). Teks tambahan ditulis dalam kutip tunggal.`,
+  example:`SELECT nama || ' (' || kota || ')' AS label FROM tabel;`,
+  hints:[`merek || ' - ' || warna`,`… FROM kendaraan WHERE jenis = 'Pikap';`],
+  solution:`SELECT no_plat, merek || ' - ' || warna AS label FROM kendaraan WHERE jenis = 'Pikap';`,
+  require:[/\|\||concat\s*\(/i], requireMsg:`Gabungkan teks dengan ||.` },
+{ ch:'fungsi', concept:'Fungsi tanggal', title:'Batas waktu penyelidikan',
+  story:`Setiap kasus pencurian harus selesai diselidiki dalam 30 hari sejak tanggal laporan.`,
+  task:`Untuk laporan berjenis Pencurian, tampilkan id, tanggal, dan tanggal 30 hari kemudian.`,
+  explain:`SQLite menyimpan tanggal sebagai teks 'YYYY-MM-DD' dan punya fungsi tanggal: date(tgl, '+30 days') menambah hari, strftime('%m', tgl) mengambil bulan, julianday(tgl) mengubah tanggal menjadi angka hari sehingga dua tanggal bisa dikurangkan. Database lain memakai nama fungsi berbeda (DATE_ADD, EXTRACT).`,
+  example:`SELECT date('2026-10-12', '+7 days');   -- 2026-10-19
+SELECT strftime('%Y-%m', '2026-10-12'); -- 2026-10
+SELECT julianday('2026-10-31') - julianday('2026-10-12'); -- 19.0`,
+  hints:[`date(tanggal, '+30 days')`,`SELECT id, tanggal, date(tanggal, '+30 days') AS batas FROM laporan_polisi WHERE jenis = 'Pencurian';`],
+  solution:`SELECT id, tanggal, date(tanggal, '+30 days') AS batas FROM laporan_polisi WHERE jenis = 'Pencurian';`,
+  require:[/\bdate\s*\(|\bstrftime\s*\(|\bjulianday\s*\(/i], requireMsg:`Gunakan fungsi tanggal date().` },
+{ ch:'fungsi', concept:'Selisih tanggal', title:'Rentang laporan bulan ini',
+  story:`Atasan bertanya: berapa hari jarak antara laporan pertama dan laporan terakhir bulan Oktober?`,
+  task:`Hitung selisih hari antara tanggal laporan paling akhir dan paling awal di laporan_polisi. Hasilnya satu angka.`,
+  explain:`julianday() mengubah tanggal menjadi angka. Selisih dua julianday adalah jumlah hari di antaranya. Fungsi ini bisa digabung dengan MIN dan MAX.`,
+  example:`SELECT julianday(MAX(tgl)) - julianday(MIN(tgl)) FROM tabel;`,
+  hints:[`julianday(MAX(tanggal))`,`SELECT julianday(MAX(tanggal)) - julianday(MIN(tanggal)) FROM laporan_polisi;`],
+  solution:`SELECT julianday(MAX(tanggal)) - julianday(MIN(tanggal)) AS selisih_hari FROM laporan_polisi;`,
+  require:[/\bjulianday\s*\(/i], requireMsg:`Gunakan julianday().` },
+{ ch:'fungsi', concept:'COALESCE', title:'Ganti yang kosong',
+  story:`Laporan keuangan tidak boleh menampilkan sel kosong. Kerugian yang belum dihitung ditulis 0.`,
+  task:`Tampilkan id, jenis, dan kerugian dari semua laporan, dengan kerugian NULL diganti 0.`,
+  explain:`COALESCE(a, b, …) mengembalikan nilai pertama yang tidak NULL. Fungsi ini berguna untuk memberi nilai pengganti. IFNULL(a, b) di SQLite/MySQL bekerja sama untuk dua argumen.`,
+  example:`SELECT COALESCE(telepon, '-') FROM tabel;`,
+  hints:[`COALESCE(kerugian, 0)`,`SELECT id, jenis, COALESCE(kerugian, 0) AS kerugian FROM laporan_polisi;`],
+  solution:`SELECT id, jenis, COALESCE(kerugian, 0) AS kerugian FROM laporan_polisi;`,
+  require:[/\bcoalesce\s*\(|\bifnull\s*\(/i], requireMsg:`Gunakan COALESCE atau IFNULL.` },
+
+/* ---- join ---- */
+{ ch:'join', after:'JOIN 3 tabel', type:'quiz', concept:'RIGHT & FULL JOIN', title:'Kiri, kanan, atau semua',
+  story:`Kamu sudah memakai INNER JOIN dan LEFT JOIN. Masih ada dua jenis lagi.`,
+  explain:`INNER JOIN: hanya baris yang punya pasangan. LEFT JOIN: semua baris kiri, pasangan kanan jika ada. RIGHT JOIN: kebalikannya, semua baris kanan. FULL OUTER JOIN: semua baris dari kedua sisi; yang tidak punya pasangan diisi NULL. SQLite mendukung RIGHT dan FULL sejak versi 3.39.`,
+  example:`A LEFT JOIN B   → semua A
+A RIGHT JOIN B  → semua B
+A FULL JOIN B   → semua A dan semua B
+A INNER JOIN B  → hanya yang cocok`,
+  q:`warga RIGHT JOIN kendaraan ON kendaraan.warga_id = warga.id menghasilkan hal yang sama dengan…`,
+  options:[[`warga LEFT JOIN kendaraan`,`Itu mempertahankan semua warga, termasuk yang tidak punya kendaraan.`],
+           [`kendaraan LEFT JOIN warga`,``],
+           [`warga FULL JOIN kendaraan`,`FULL mempertahankan semua baris dari kedua tabel.`],
+           [`warga CROSS JOIN kendaraan`,`CROSS JOIN tidak memakai syarat ON sama sekali.`]], answer:1,
+  why:`A RIGHT JOIN B sama dengan B LEFT JOIN A (urutan kolomnya saja yang berbeda). Karena itu banyak orang hanya memakai LEFT JOIN dan menukar urutan tabel.` },
+{ ch:'join', after:'RIGHT & FULL JOIN', type:'quiz', concept:'CROSS JOIN', title:'Semua pasangan',
+  story:`Seorang rekan lupa menulis ON dan hasil query-nya tiba-tiba sangat besar.`,
+  explain:`CROSS JOIN memasangkan setiap baris tabel A dengan setiap baris tabel B, disebut juga hasil kali kartesius. Jumlah barisnya = baris A × baris B. Kadang berguna (misalnya membuat semua kombinasi jadwal), tapi sering terjadi tanpa sengaja karena lupa menulis syarat JOIN.`,
+  example:`SELECT * FROM a CROSS JOIN b;
+-- sama dengan
+SELECT * FROM a, b;   -- tanpa WHERE penghubung`,
+  q:`Tabel warga punya 12 baris dan kendaraan 12 baris. Berapa baris hasil warga CROSS JOIN kendaraan?`,
+  options:[[`12`,`12 adalah jumlah pasangan yang benar-benar cocok lewat warga_id, bukan hasil CROSS JOIN.`],[`24`,`Itu penjumlahan. CROSS JOIN mengalikan jumlah baris.`],[`144`,``],[`0`,`CROSS JOIN tidak menyaring apa pun.`]], answer:2,
+  why:`12 × 12 = 144. Jika hasil JOIN-mu tiba-tiba membengkak, periksa apakah syarat ON-nya terlewat.` },
+{ ch:'join', after:'CROSS JOIN', concept:'SELF JOIN', title:'Kendaraan kembar merek',
+  story:`Pelaku kadang memakai kendaraan bermerek sama untuk mengecoh saksi. Cari pasangan kendaraan dengan merek yang sama.`,
+  task:`Tampilkan merek dan pasangan no_plat (dua kolom no_plat) untuk kendaraan yang mereknya sama. Setiap pasangan cukup muncul sekali.`,
+  explain:`SELF JOIN adalah tabel yang di-JOIN dengan dirinya sendiri, memakai dua alias berbeda. Syarat a.no_plat < b.no_plat mencegah sebuah kendaraan dipasangkan dengan dirinya sendiri dan mencegah pasangan muncul dua kali (A-B dan B-A).`,
+  example:`SELECT a.x, b.x
+FROM tabel a
+JOIN tabel b ON a.kolom = b.kolom
+           AND a.id < b.id;`,
+  hints:[`FROM kendaraan a JOIN kendaraan b ON a.merek = b.merek`,`Tambahkan AND a.no_plat < b.no_plat. SELECT a.merek, a.no_plat, b.no_plat`],
+  solution:`SELECT a.merek, a.no_plat, b.no_plat FROM kendaraan a JOIN kendaraan b ON a.merek = b.merek AND a.no_plat < b.no_plat;`,
+  require:[/\bjoin\b/i], requireMsg:`Gunakan JOIN tabel kendaraan dengan dirinya sendiri.` },
+{ ch:'join', after:'SELF JOIN', concept:'UNION', title:'Semua yang terlibat',
+  story:`Buat daftar semua warga_id yang terlibat malam itu: para saksi laporan 3 dan semua yang masuk gudang tanggal 2026-10-12.`,
+  task:`Gabungkan warga_id dari saksi (laporan_id 3) dan warga_id dari log_gudang (tanggal 2026-10-12), tanpa duplikat.`,
+  explain:`UNION menumpuk hasil dua query menjadi satu dan membuang baris kembar. UNION ALL menumpuk tanpa membuang duplikat (lebih cepat). Kedua query harus punya jumlah kolom yang sama dengan tipe yang sejalan.`,
+  example:`SELECT kolom FROM tabel_a WHERE ...
+UNION
+SELECT kolom FROM tabel_b WHERE ...;`,
+  hints:[`SELECT warga_id FROM saksi WHERE laporan_id = 3`,`… UNION SELECT warga_id FROM log_gudang WHERE tanggal = '2026-10-12';`],
+  solution:`SELECT warga_id FROM saksi WHERE laporan_id = 3 UNION SELECT warga_id FROM log_gudang WHERE tanggal = '2026-10-12';`,
+  require:[/\bunion\b/i], requireMsg:`Gunakan UNION.` },
+{ ch:'join', after:'UNION', concept:'INTERSECT', title:'Ke gudang dan ke pasar',
+  story:`Siapa yang pernah masuk gudang <em>dan</em> juga pernah menjual kopi di pasar?`,
+  task:`Tampilkan warga_id yang muncul di log_gudang dan juga di penjualan_kopi.`,
+  explain:`INTERSECT mengambil baris yang ada di kedua hasil query. EXCEPT mengambil baris di query pertama yang tidak ada di query kedua (di Oracle namanya MINUS).`,
+  example:`SELECT x FROM a
+INTERSECT
+SELECT x FROM b;`,
+  hints:[`SELECT warga_id FROM log_gudang INTERSECT SELECT …`,`… INTERSECT SELECT warga_id FROM penjualan_kopi;`],
+  solution:`SELECT warga_id FROM log_gudang INTERSECT SELECT warga_id FROM penjualan_kopi;`,
+  require:[/\bintersect\b/i], requireMsg:`Gunakan INTERSECT.` },
+{ ch:'join', after:'INTERSECT', concept:'EXCEPT', title:'Ke pasar tanpa ke gudang',
+  story:`Ada penjual kopi yang tidak pernah masuk gudang. Mereka mungkin memang petani sungguhan.`,
+  task:`Tampilkan warga_id yang ada di penjualan_kopi tetapi tidak pernah tercatat di log_gudang.`,
+  explain:`EXCEPT mengambil hasil query pertama, lalu membuang baris yang juga muncul di query kedua. Urutan query penting: A EXCEPT B tidak sama dengan B EXCEPT A.`,
+  example:`SELECT x FROM a
+EXCEPT
+SELECT x FROM b;`,
+  hints:[`Mulai dari penjualan_kopi.`,`SELECT warga_id FROM penjualan_kopi EXCEPT SELECT warga_id FROM log_gudang;`],
+  solution:`SELECT warga_id FROM penjualan_kopi EXCEPT SELECT warga_id FROM log_gudang;`,
+  require:[/\bexcept\b/i], requireMsg:`Gunakan EXCEPT.` },
+
+/* ---- sub ---- */
+{ ch:'sub', after:'IN (subquery)', concept:'EXISTS', title:'Pemilik sepeda motor',
+  story:`Saksi Novi melihat orang membawa tabung gas naik motor. Siapa saja warga yang punya motor?`,
+  task:`Tampilkan nama warga yang punya setidaknya satu kendaraan berjenis Motor, memakai EXISTS.`,
+  explain:`EXISTS (subquery) bernilai benar jika subquery menghasilkan minimal satu baris. Subquery-nya biasanya berkorelasi: ia merujuk kolom dari query luar (k.warga_id = w.id), sehingga dijalankan untuk setiap baris warga.`,
+  example:`SELECT a.nama FROM a
+WHERE EXISTS (
+  SELECT 1 FROM b
+  WHERE b.a_id = a.id AND ...
+);`,
+  hints:[`WHERE EXISTS (SELECT 1 FROM kendaraan k WHERE k.warga_id = w.id …)`,`… AND k.jenis = 'Motor')`],
+  solution:`SELECT w.nama FROM warga w WHERE EXISTS (SELECT 1 FROM kendaraan k WHERE k.warga_id = w.id AND k.jenis = 'Motor');`,
+  require:[/\bexists\b/i], requireMsg:`Gunakan EXISTS.` },
+{ ch:'sub', after:'EXISTS', concept:'NOT EXISTS', title:'Yang belum pernah bersaksi',
+  story:`Untuk sidang, jaksa butuh saksi baru yang belum pernah memberi keterangan di laporan mana pun.`,
+  task:`Tampilkan nama warga yang tidak pernah tercatat di tabel saksi, memakai NOT EXISTS.`,
+  explain:`NOT EXISTS benar jika subquery tidak menghasilkan baris sama sekali. Ini cara aman mencari data "yang tidak punya pasangan". Berbeda dengan NOT IN, NOT EXISTS tidak terganggu nilai NULL.`,
+  example:`SELECT a.nama FROM a
+WHERE NOT EXISTS (
+  SELECT 1 FROM b WHERE b.a_id = a.id
+);`,
+  hints:[`WHERE NOT EXISTS (SELECT 1 FROM saksi s WHERE …)`,`… WHERE s.warga_id = w.id)`],
+  solution:`SELECT w.nama FROM warga w WHERE NOT EXISTS (SELECT 1 FROM saksi s WHERE s.warga_id = w.id);`,
+  require:[/\bnot\s+exists\b/i], requireMsg:`Gunakan NOT EXISTS.`,
+  alt:[`SELECT w.nama FROM warga w LEFT JOIN saksi s ON s.warga_id = w.id WHERE s.id IS NULL;`] },
+{ ch:'sub', after:'NOT EXISTS', concept:'Subquery di FROM', title:'Rata-rata dari total',
+  story:`Berapa rata-rata total karung yang dijual setiap penjual? Ini butuh dua tingkat hitungan: total per orang, lalu rata-ratanya.`,
+  task:`Hitung rata-rata dari total karung per warga_id di penjualan_kopi. Hasilnya satu angka.`,
+  explain:`Subquery di FROM (disebut derived table) diperlakukan seperti tabel sementara. Ia wajib diberi alias di banyak database. Fungsi agregat tidak bisa ditumpuk langsung (AVG(SUM(x)) error), jadi pakai subquery.`,
+  example:`SELECT AVG(total) FROM (
+  SELECT kelompok, SUM(x) AS total
+  FROM tabel GROUP BY kelompok
+) AS t;`,
+  hints:[`Subquery-nya: SELECT warga_id, SUM(karung) AS total FROM penjualan_kopi GROUP BY warga_id`,`SELECT AVG(total) FROM ( … ) AS t;`],
+  solution:`SELECT AVG(total) FROM (SELECT warga_id, SUM(karung) AS total FROM penjualan_kopi GROUP BY warga_id) AS t;`,
+  require:[/\bfrom\s*\(\s*select\b/i], requireMsg:`Letakkan subquery di dalam FROM.` },
+
+/* ---- ubah ---- */
+{ ch:'ubah', after:'Constraint NOT NULL', type:'error', concept:'Constraint UNIQUE', title:'Uji KTP ganda',
+  story:`Relasi 1:1 antara warga dan KTP dijaga oleh UNIQUE pada ktp.warga_id. Uji penjaganya.`,
+  task:`Coba masukkan KTP baru dengan nik '7171999999990099' untuk warga_id 4 (Stevi sudah punya KTP). Level selesai jika database menolaknya.`,
+  explain:`UNIQUE menolak nilai kembar di kolom yang bukan primary key. Ini yang menjaga relasi 1:1: satu warga tidak bisa punya dua KTP.`,
+  example:`INSERT INTO ktp (nik, warga_id)
+VALUES ('123', 1);
+-- Error: UNIQUE constraint failed: ktp.warga_id`,
+  hints:[`INSERT INTO ktp (nik, warga_id, tempat_lahir) VALUES (…);`,`VALUES ('7171999999990099', 4, 'Manado')`],
+  solution:`INSERT INTO ktp (nik, warga_id, tempat_lahir) VALUES ('7171999999990099', 4, 'Manado');`,
+  expectErr:/unique constraint failed: ktp\.warga_id/i, require:[/\binsert\b/i], requireMsg:`Gunakan INSERT.`,
+  win:`UNIQUE pada foreign key mengubah relasi 1:N menjadi 1:1.` },
+{ ch:'ubah', after:'Constraint UNIQUE', type:'quiz', concept:'Transaksi & ACID', title:'Semua atau tidak sama sekali',
+  story:`Petugas memindahkan 40 karung dari catatan "barang hilang" ke catatan "barang bukti". Di tengah proses, listrik padam.`,
+  explain:`Transaksi mengelompokkan beberapa perintah menjadi satu kesatuan. BEGIN memulai, COMMIT menyimpan permanen, ROLLBACK membatalkan semua perubahan sejak BEGIN. Transaksi menjamin ACID: Atomicity (semua atau tidak sama sekali), Consistency (aturan data tetap terjaga), Isolation (transaksi tidak saling mengganggu), Durability (yang sudah di-COMMIT tidak hilang).`,
+  example:`BEGIN;
+UPDATE stok SET jumlah = jumlah - 40 WHERE id = 1;
+UPDATE stok SET jumlah = jumlah + 40 WHERE id = 2;
+COMMIT;`,
+  q:`Kedua UPDATE ada dalam satu transaksi, dan listrik padam sebelum COMMIT. Setelah listrik menyala, isi database…`,
+  options:[[`Hanya UPDATE pertama yang tersimpan`,`Itulah yang dicegah transaksi: perubahan setengah jadi.`],
+           [`Kembali seperti sebelum BEGIN; tidak ada perubahan yang tersimpan`,``],
+           [`Kedua UPDATE tersimpan karena sudah dijalankan`,`Perubahan baru permanen setelah COMMIT.`],
+           [`Database rusak dan harus dibuat ulang`,`Durability dan atomicity membuat database pulih ke kondisi konsisten terakhir.`]], answer:1,
+  why:`Atomicity: transaksi yang belum di-COMMIT dibatalkan seluruhnya. 40 karung tidak akan "hilang di tengah jalan".` },
+{ ch:'ubah', after:'Transaksi & ACID', type:'dml', concept:'ROLLBACK', title:'Batalkan kesalahan',
+  story:`Seorang petugas magang ingin mencoba menghapus buku tamu gudang. Kamu mengajarinya memakai transaksi supaya bisa dibatalkan.`,
+  task:`Mulai transaksi, hapus semua baris log_gudang, lalu batalkan dengan ROLLBACK. Datanya harus tetap utuh.`,
+  explain:`Di dalam transaksi, perubahan belum permanen. ROLLBACK mengembalikan semuanya ke kondisi saat BEGIN. Biasakan memakai transaksi saat mengubah banyak data.`,
+  example:`BEGIN;
+DELETE FROM tabel;
+ROLLBACK;`,
+  hints:[`Tiga perintah: BEGIN; … ; ROLLBACK;`,`BEGIN; DELETE FROM log_gudang; ROLLBACK;`],
+  solution:`BEGIN; DELETE FROM log_gudang; ROLLBACK;`,
+  verify:[`SELECT COUNT(*) AS jumlah_baris FROM log_gudang`],
+  vlabels:[`Jumlah baris log_gudang setelah query-mu`],
+  require:[/\bbegin\b/i,/\bdelete\b/i,/\brollback\b/i], requireMsg:`Gunakan BEGIN, DELETE, lalu ROLLBACK.` },
+{ ch:'ubah', after:'ROLLBACK', type:'dml', concept:'COMMIT', title:'Pisahkan catatan penjualan',
+  story:`Penjualan nomor 7 (10 karung) ternyata dua transaksi terpisah: 5 karung dan 5 karung. Keduanya harus diperbaiki bersamaan.`,
+  task:`Dalam satu transaksi: ubah karung penjualan id 7 menjadi 5, tambahkan penjualan baru (id 9, warga_id 4, tanggal 2026-10-16, 5 karung, harga 950000), lalu COMMIT.`,
+  explain:`COMMIT menyimpan semua perubahan sejak BEGIN secara permanen. Gunakan transaksi setiap kali beberapa perubahan harus berhasil bersama: kalau satu gagal, semuanya dibatalkan.`,
+  example:`BEGIN;
+UPDATE ...;
+INSERT ...;
+COMMIT;`,
+  hints:[`BEGIN; UPDATE penjualan_kopi SET karung = 5 WHERE id = 7; …`,`… INSERT INTO penjualan_kopi VALUES (9, 4, '2026-10-16', 5, 950000); COMMIT;`],
+  solution:`BEGIN; UPDATE penjualan_kopi SET karung = 5 WHERE id = 7; INSERT INTO penjualan_kopi VALUES (9, 4, '2026-10-16', 5, 950000); COMMIT;`,
+  verify:[`SELECT * FROM penjualan_kopi ORDER BY id`],
+  vlabels:[`Isi penjualan_kopi setelah query-mu`], needWhere:true,
+  require:[/\bbegin\b/i,/\bcommit\b/i], requireMsg:`Bungkus perubahan dengan BEGIN … COMMIT.` },
+
+/* ---- struktur ---- */
+{ ch:'struktur', after:'FOREIGN KEY', type:'ddl', concept:'CHECK & DEFAULT', title:'Jumlah tidak boleh nol',
+  story:`Jumlah barang bukti tidak masuk akal jika 0 atau negatif, dan biasanya hanya ada 1 barang.`,
+  task:`Buat tabel barang_bukti: id INTEGER PRIMARY KEY, nama_barang TEXT NOT NULL, jumlah INTEGER dengan nilai bawaan 1 dan harus lebih dari 0.`,
+  explain:`DEFAULT memberi nilai bawaan jika kolom tidak diisi saat INSERT. CHECK (syarat) menolak baris yang tidak memenuhi syarat. Pengujian di bawah akan memasukkan baris tanpa jumlah, lalu mencoba jumlah 0.`,
+  example:`CREATE TABLE produk (
+  id    INTEGER PRIMARY KEY,
+  stok  INTEGER DEFAULT 0 CHECK (stok >= 0)
+);`,
+  hints:[`jumlah INTEGER DEFAULT 1 CHECK (…)`,`jumlah INTEGER DEFAULT 1 CHECK (jumlah > 0)`],
+  solution:`CREATE TABLE barang_bukti (id INTEGER PRIMARY KEY, nama_barang TEXT NOT NULL, jumlah INTEGER DEFAULT 1 CHECK (jumlah > 0));`,
+  verify:[`INSERT INTO barang_bukti (id, nama_barang) VALUES (1, 'Uji default'); SELECT id, nama_barang, jumlah FROM barang_bukti`,
+          `INSERT INTO barang_bukti (id, nama_barang, jumlah) VALUES (2, 'Uji check', 0); SELECT 'diterima' AS hasil_uji`],
+  vlabels:[`Uji DEFAULT: baris tanpa jumlah`,`Uji CHECK: memasukkan jumlah 0`],
+  require:[/\bcheck\b/i,/\bdefault\b/i], requireMsg:`Gunakan DEFAULT dan CHECK.` },
+{ ch:'struktur', after:'CHECK & DEFAULT', type:'dml', concept:'Id otomatis', title:'Biarkan database memberi nomor',
+  story:`Petugas sering salah menebak id berikutnya. Biarkan database yang memberi nomor.`,
+  task:`Tambahkan laporan baru (tanggal 2026-10-23, kota Kota Lembah, jenis Kehilangan) tanpa menyebut kolom id.`,
+  explain:`Kolom INTEGER PRIMARY KEY di SQLite otomatis terisi angka berikutnya jika tidak diisi. Kata AUTOINCREMENT menambah jaminan bahwa nomor bekas baris yang dihapus tidak dipakai ulang. Di MySQL namanya AUTO_INCREMENT, di PostgreSQL SERIAL atau IDENTITY.`,
+  example:`INSERT INTO tabel (kolom1, kolom2)
+VALUES ('a', 'b');   -- id terisi otomatis`,
+  hints:[`Sebutkan hanya kolom tanggal, kota, jenis.`,`INSERT INTO laporan_polisi (tanggal, kota, jenis) VALUES ('2026-10-23', 'Kota Lembah', 'Kehilangan');`],
+  solution:`INSERT INTO laporan_polisi (tanggal, kota, jenis) VALUES ('2026-10-23', 'Kota Lembah', 'Kehilangan');`,
+  verify:[`SELECT id, tanggal, jenis FROM laporan_polisi ORDER BY id`],
+  vlabels:[`Isi laporan_polisi setelah query-mu`],
+  require:[/\binsert\b/i], requireNot:/\(\s*id\b/i, requireNotMsg:`Jangan menyebut kolom id; biarkan database mengisinya.`, requireMsg:`Gunakan INSERT.` },
+{ ch:'struktur', after:'Id otomatis', type:'ddl', concept:'ON DELETE CASCADE', title:'Ikut terhapus bersama induknya',
+  story:`Catatan penyidik hanya berarti selama laporannya ada. Jika laporan dicabut, catatannya harus ikut hilang.`,
+  task:`Buat tabel catatan_penyidik: id INTEGER PRIMARY KEY, laporan_id INTEGER yang merujuk laporan_polisi(id) dengan ON DELETE CASCADE, dan isi TEXT.`,
+  explain:`Aturan ON DELETE menentukan nasib baris anak saat induknya dihapus. CASCADE ikut menghapus anak. SET NULL mengosongkan foreign key-nya. RESTRICT (bawaan) menolak penghapusan induk selama masih punya anak. ON UPDATE bekerja serupa untuk perubahan kunci.`,
+  example:`induk_id INTEGER REFERENCES induk(id)
+         ON DELETE CASCADE`,
+  hints:[`laporan_id INTEGER REFERENCES laporan_polisi(id) ON DELETE CASCADE`,`CREATE TABLE catatan_penyidik (id INTEGER PRIMARY KEY, laporan_id INTEGER REFERENCES laporan_polisi(id) ON DELETE CASCADE, isi TEXT);`],
+  solution:`CREATE TABLE catatan_penyidik (id INTEGER PRIMARY KEY, laporan_id INTEGER REFERENCES laporan_polisi(id) ON DELETE CASCADE, isi TEXT);`,
+  verify:[`SELECT "from" AS kolom, "table" AS merujuk_tabel, on_delete FROM pragma_foreign_key_list('catatan_penyidik')`,
+          `INSERT INTO catatan_penyidik (id, laporan_id, isi) VALUES (1, 6, 'Cek laci balai desa'); DELETE FROM laporan_polisi WHERE id = 6; SELECT COUNT(*) AS sisa_catatan FROM catatan_penyidik`],
+  vlabels:[`Aturan foreign key`,`Uji: catatan untuk laporan 6, lalu laporan 6 dihapus`],
+  require:[/on\s+delete\s+cascade/i], requireMsg:`Gunakan ON DELETE CASCADE.` },
+{ ch:'struktur', after:'ALTER TABLE', type:'ddl', concept:'DROP TABLE', title:'Bersihkan tabel sementara',
+  setup:`CREATE TABLE tabel_sementara (id INTEGER, catatan TEXT); INSERT INTO tabel_sementara VALUES (1, 'coba-coba');`,
+  extraTables:[['tabel_sementara',[['id'],['catatan']]]],
+  story:`Petugas magang meninggalkan tabel_sementara berisi data coba-coba. Tabel itu harus dihapus seluruhnya.`,
+  task:`Hapus tabel tabel_sementara beserta strukturnya.`,
+  explain:`DROP TABLE menghapus tabel beserta seluruh isinya dan tidak bisa dibatalkan di luar transaksi. DELETE FROM hanya menghapus isi dan menyisakan strukturnya. Tambahkan IF EXISTS agar tidak error jika tabelnya tidak ada.`,
+  example:`DROP TABLE IF EXISTS nama_tabel;`,
+  hints:[`DROP TABLE …`,`DROP TABLE tabel_sementara;`],
+  solution:`DROP TABLE tabel_sementara;`,
+  verify:[`SELECT name AS tabel FROM sqlite_master WHERE type = 'table' ORDER BY name`],
+  vlabels:[`Daftar tabel setelah query-mu`],
+  require:[/\bdrop\s+table\b/i], requireMsg:`Gunakan DROP TABLE.` },
+
+/* ---- optim ---- */
+{ ch:'optim', type:'ddl', concept:'CREATE VIEW', title:'Query yang disimpan',
+  story:`Petugas lapangan berkali-kali menulis JOIN yang sama untuk melihat kendaraan beserta pemiliknya. Simpan query itu sebagai view.`,
+  task:`Buat view bernama v_kendaraan_pemilik yang berisi no_plat, merek, dan nama pemilik dari JOIN kendaraan dan warga.`,
+  explain:`VIEW adalah query yang disimpan dengan nama dan bisa dipakai seperti tabel. View tidak menyimpan data sendiri; isinya selalu dihitung dari tabel aslinya. Gunanya: menyederhanakan query yang rumit dan membatasi kolom yang boleh dilihat pengguna.`,
+  example:`CREATE VIEW nama_view AS
+SELECT a.x, b.y
+FROM a JOIN b ON ...;`,
+  hints:[`CREATE VIEW v_kendaraan_pemilik AS SELECT …`,`… SELECT k.no_plat, k.merek, w.nama FROM kendaraan k JOIN warga w ON k.warga_id = w.id;`],
+  solution:`CREATE VIEW v_kendaraan_pemilik AS SELECT k.no_plat, k.merek, w.nama FROM kendaraan k JOIN warga w ON k.warga_id = w.id;`,
+  verify:[`SELECT name, type FROM sqlite_master WHERE name = 'v_kendaraan_pemilik'`, `SELECT * FROM v_kendaraan_pemilik`],
+  vlabels:[`Objek yang terbentuk`,`Isi view`],
+  require:[/\bcreate\s+view\b/i], requireMsg:`Gunakan CREATE VIEW.` },
+{ ch:'optim', concept:'Memakai VIEW', title:'View seperti tabel biasa',
+  setup:`CREATE VIEW v_kendaraan_pemilik AS SELECT k.no_plat, k.merek, w.nama FROM kendaraan k JOIN warga w ON k.warga_id = w.id;`,
+  extraTables:[['v_kendaraan_pemilik',[['no_plat'],['merek'],['nama']]]],
+  story:`View sudah tersedia. Sekarang pakai untuk mencari semua kendaraan Toyota beserta pemiliknya.`,
+  task:`Dari view v_kendaraan_pemilik, tampilkan semua kolom untuk merek yang diawali Toyota.`,
+  explain:`View dipakai persis seperti tabel: SELECT, WHERE, ORDER BY, bahkan JOIN. Bedanya, kamu tidak perlu menulis JOIN-nya lagi.`,
+  example:`SELECT * FROM nama_view WHERE ...;`,
+  hints:[`SELECT * FROM v_kendaraan_pemilik WHERE …`,`WHERE merek LIKE 'Toyota%'`],
+  solution:`SELECT * FROM v_kendaraan_pemilik WHERE merek LIKE 'Toyota%';`,
+  require:[/v_kendaraan_pemilik/i], requireMsg:`Ambil data dari view v_kendaraan_pemilik.` },
+{ ch:'optim', type:'ddl', concept:'CREATE INDEX', title:'Mempercepat pencarian tanggal',
+  story:`Buku tamu gudang akan berisi jutaan baris. Pencarian berdasarkan tanggal harus tetap cepat.`,
+  task:`Buat index bernama idx_log_tanggal pada kolom tanggal di tabel log_gudang.`,
+  explain:`Index seperti daftar isi buku: database bisa langsung melompat ke baris yang dicari tanpa membaca seluruh tabel. Primary key dan UNIQUE otomatis punya index. Buat index pada kolom yang sering dipakai di WHERE, JOIN, atau ORDER BY.`,
+  example:`CREATE INDEX nama_index ON tabel (kolom);`,
+  hints:[`CREATE INDEX idx_log_tanggal ON …`,`CREATE INDEX idx_log_tanggal ON log_gudang (tanggal);`],
+  solution:`CREATE INDEX idx_log_tanggal ON log_gudang (tanggal);`,
+  verify:[`SELECT name, tbl_name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'log_gudang' AND name NOT LIKE 'sqlite_%'`, `SELECT name AS kolom FROM pragma_index_info('idx_log_tanggal')`],
+  vlabels:[`Index di log_gudang`,`Kolom yang diindeks`],
+  require:[/\bcreate\s+(unique\s+)?index\b/i], requireMsg:`Gunakan CREATE INDEX.` },
+{ ch:'optim', concept:'EXPLAIN QUERY PLAN', title:'Intip cara database bekerja',
+  setup:`CREATE INDEX idx_log_tanggal ON log_gudang (tanggal);`,
+  story:`Bagaimana kamu tahu index-nya benar-benar dipakai? Tanyakan langsung ke database.`,
+  task:`Tampilkan rencana eksekusi dari query: SELECT * FROM log_gudang WHERE tanggal = '2026-10-12'`,
+  explain:`EXPLAIN QUERY PLAN di depan query menampilkan cara database akan menjalankannya. SCAN berarti membaca seluruh tabel (lambat untuk tabel besar). SEARCH … USING INDEX berarti memakai index. Di PostgreSQL dan MySQL perintahnya EXPLAIN.`,
+  example:`EXPLAIN QUERY PLAN
+SELECT * FROM tabel WHERE kolom = 'x';`,
+  hints:[`Tambahkan EXPLAIN QUERY PLAN di depan query.`,`EXPLAIN QUERY PLAN SELECT * FROM log_gudang WHERE tanggal = '2026-10-12';`],
+  solution:`EXPLAIN QUERY PLAN SELECT * FROM log_gudang WHERE tanggal = '2026-10-12';`,
+  require:[/explain\s+query\s+plan/i], requireMsg:`Gunakan EXPLAIN QUERY PLAN.`,
+  win:`Kolom detail menyebut SEARCH … USING INDEX idx_log_tanggal. Tanpa index, isinya SCAN log_gudang.` },
+{ ch:'optim', type:'quiz', concept:'Untung rugi index', title:'Index bukan gratis',
+  story:`Setelah tahu index mempercepat pencarian, petugas magang mengusulkan membuat index di semua kolom.`,
+  explain:`Index mempercepat pembacaan, tapi setiap INSERT, UPDATE, dan DELETE juga harus memperbarui semua index terkait, dan setiap index memakan ruang penyimpanan. Index juga kurang berguna pada kolom dengan sedikit variasi nilai (misalnya kolom jenis kelamin) atau pada tabel kecil.`,
+  example:`✓ index: kolom sering di WHERE/JOIN, banyak variasi nilai
+✗ index: kolom jarang dicari, tabel kecil,
+          tabel yang sangat sering ditulis`,
+  q:`Apa kerugian membuat index di semua kolom?`,
+  options:[[`SELECT menjadi lebih lambat`,`SELECT justru bisa lebih cepat. Kerugiannya ada di sisi penulisan data.`],
+           [`INSERT/UPDATE/DELETE lebih lambat dan butuh ruang penyimpanan tambahan`,``],
+           [`Data bisa hilang`,`Index tidak menghapus data.`],
+           [`Primary key tidak berfungsi`,`Primary key tetap berfungsi seperti biasa.`]], answer:1,
+  why:`Buat index secukupnya pada kolom yang benar-benar sering dipakai untuk mencari, menggabungkan, atau mengurutkan.` },
+{ ch:'optim', concept:'SQL injection', title:'Input yang menipu',
+  story:`Aplikasi pencarian warga yang lama menyusun query dengan menempelkan input pengguna:<br><code>"SELECT * FROM warga WHERE nama = '" + input + "'"</code><br>Seseorang mengetik <code>x' OR '1'='1</code> di kotak pencarian.`,
+  task:`Tulis dan jalankan query yang terbentuk dari input itu, lalu lihat berapa baris yang bocor.`,
+  explain:`SQL injection terjadi ketika input pengguna ditempel langsung ke teks query, sehingga input bisa mengubah perintahnya. Pencegahannya: selalu pakai parameterized query (prepared statement), misalnya "SELECT * FROM warga WHERE nama = ?" dengan input dikirim terpisah. Jangan pernah menyusun query dengan menggabungkan teks input.`,
+  example:`✗ "… WHERE nama = '" + input + "'"
+✓ db.prepare("… WHERE nama = ?").all(input)`,
+  hints:[`Ganti input pada pola query dengan teks yang diketik penyerang.`,`SELECT * FROM warga WHERE nama = 'x' OR '1'='1';`],
+  solution:`SELECT * FROM warga WHERE nama = 'x' OR '1'='1';`,
+  require:[/'1'\s*=\s*'1'|1\s*=\s*1/i], requireMsg:`Gunakan persis input penyerang: x' OR '1'='1`,
+  win:`Semua 12 warga bocor, karena '1'='1' selalu benar. Dengan parameterized query, input itu hanya dianggap sebagai nama yang aneh dan tidak menghasilkan apa-apa.` },
+{ ch:'optim', type:'quiz', concept:'GRANT & REVOKE', title:'Hak akses petugas magang',
+  story:`Petugas magang hanya boleh membaca laporan, tidak boleh mengubah apa pun.`,
+  explain:`DCL mengatur siapa boleh melakukan apa. GRANT memberi hak (SELECT, INSERT, UPDATE, DELETE, ALL) pada tabel tertentu kepada pengguna atau role. REVOKE mencabutnya. Prinsip least privilege: beri hak sekecil mungkin yang masih cukup untuk bekerja. SQLite tidak punya sistem pengguna, tapi PostgreSQL, MySQL, dan SQL Server memakainya.`,
+  example:`GRANT SELECT ON laporan_polisi TO magang;
+REVOKE INSERT ON laporan_polisi FROM magang;`,
+  q:`Perintah mana yang paling tepat untuk petugas magang?`,
+  options:[[`GRANT ALL ON laporan_polisi TO magang;`,`ALL memberi hak mengubah dan menghapus juga. Itu melanggar prinsip least privilege.`],
+           [`GRANT SELECT ON laporan_polisi TO magang;`,``],
+           [`REVOKE SELECT ON laporan_polisi FROM magang;`,`Itu justru mencabut hak membaca.`],
+           [`GRANT DELETE ON laporan_polisi TO magang;`,`DELETE adalah hak menghapus, bukan membaca.`]], answer:1,
+  why:`Hanya SELECT, hanya pada tabel yang diperlukan. Itulah least privilege.` },
+
+/* ---- rancang ---- */
+{ ch:'rancang', type:'quiz', concept:"Notasi crow's foot", title:'Membaca kaki gagak',
+  story:`Diagram database profesional biasanya memakai notasi crow's foot (kaki gagak) di ujung garis relasi.`,
+  explain:`Di notasi crow's foot, ujung garis menunjukkan kardinalitas. Satu garis tegak (|) berarti "satu". Cabang tiga seperti kaki gagak berarti "banyak". Lingkaran (○) berarti "boleh nol" (opsional). Jadi ||──○< dibaca "tepat satu ke nol-atau-banyak".`,
+  example:`warga ||──────○< kendaraan
+       tepat 1        0 atau banyak
+
+laporan ||─────|< saksi
+        tepat 1      1 atau banyak`,
+  q:`Pada garis warga ||──○< kendaraan, ujung ○< di sisi kendaraan berarti…`,
+  options:[[`Setiap warga punya tepat satu kendaraan`,`○< berarti nol atau banyak, bukan tepat satu.`],
+           [`Setiap warga bisa punya nol, satu, atau banyak kendaraan`,``],
+           [`Setiap kendaraan bisa punya banyak pemilik`,`Sisi kendaraan menggambarkan berapa kendaraan per warga. Ujung || di sisi warga berarti setiap kendaraan punya tepat satu pemilik.`],
+           [`Relasinya N:M`,`N:M membutuhkan kaki gagak di kedua ujung.`]], answer:1,
+  why:`Lingkaran = boleh nol, kaki gagak = banyak. Yohanis dan Fandi adalah contoh warga dengan nol kendaraan.` },
+{ ch:'rancang', type:'quiz', concept:'Kardinalitas dari cerita', title:'Di mana letak foreign key',
+  story:`Kepolisian ingin mencatat petugas yang menangani setiap laporan. Aturannya: satu petugas bisa menangani banyak laporan, dan setiap laporan ditangani tepat satu petugas.`,
+  explain:`Cara menerjemahkan cerita ke tabel: cari kata benda (calon tabel), lalu baca kalimat relasinya dari kedua arah. Pada relasi 1:N, foreign key diletakkan di tabel sisi "banyak". Pada N:M, buat tabel penghubung.`,
+  example:`"satu A punya banyak B, satu B milik satu A"
+→ 1:N → B.a_id REFERENCES A(id)`,
+  q:`Di mana foreign key-nya diletakkan?`,
+  options:[[`Kolom laporan_id di tabel petugas`,`Satu petugas menangani banyak laporan. Satu kolom laporan_id di petugas hanya muat satu laporan.`],
+           [`Kolom petugas_id di tabel laporan_polisi`,``],
+           [`Tabel penghubung petugas_laporan`,`Tabel penghubung hanya perlu untuk N:M. Di sini setiap laporan hanya punya satu petugas.`],
+           [`Tidak perlu foreign key`,`Tanpa foreign key, tidak ada cara mengetahui siapa petugas sebuah laporan.`]], answer:1,
+  why:`1:N, jadi FK di sisi banyak: laporan_polisi.petugas_id REFERENCES petugas(id).` },
+{ ch:'rancang', type:'quiz', concept:'Merancang N:M', title:'Petugas dan patroli',
+  story:`Setiap patroli malam diikuti beberapa petugas, dan setiap petugas ikut banyak patroli.`,
+  explain:`Relasi N:M selalu butuh tabel ketiga yang menyimpan pasangan. Tabel penghubung boleh punya kolom tambahan yang menjelaskan pasangan itu, misalnya peran petugas di patroli tersebut.`,
+  example:`petugas(id, nama)
+patroli(id, tanggal, rute)
+petugas_patroli(petugas_id, patroli_id, peran)
+  PRIMARY KEY (petugas_id, patroli_id)`,
+  q:`Berapa tabel minimal yang dibutuhkan untuk menyimpan petugas, patroli, dan siapa ikut patroli mana?`,
+  options:[[`1`,`Satu tabel akan penuh data ganda dan melanggar normalisasi.`],[`2`,`Dua tabel hanya bisa menyimpan relasi 1:N.`],[`3`,``],[`4`,`Tiga sudah cukup: dua tabel entitas dan satu tabel penghubung.`]], answer:2,
+  why:`petugas, patroli, dan petugas_patroli sebagai tabel penghubung dengan primary key gabungan.` },
+{ ch:'rancang', type:'ddl', concept:'Merancang dari kebutuhan', title:'Rancang tabel penugasan', erd:true,
+  story:`Kebutuhan dari Kepala Penyidik: "Saya punya beberapa petugas, masing-masing dengan nama (wajib) dan pangkat. Setiap penugasan menghubungkan satu petugas dengan satu laporan, dan tanggal mulainya wajib dicatat."`,
+  task:`Buat dua tabel. petugas: id INTEGER PRIMARY KEY, nama TEXT NOT NULL, pangkat TEXT. penugasan: id INTEGER PRIMARY KEY, petugas_id INTEGER NOT NULL (FK ke petugas), laporan_id INTEGER NOT NULL (FK ke laporan_polisi), tanggal_mulai TEXT NOT NULL.`,
+  explain:`Rancang dari kebutuhan: kata benda menjadi tabel, sifatnya menjadi kolom, kata "wajib" menjadi NOT NULL, dan "menghubungkan" menjadi foreign key. Tabel induk (petugas) harus dibuat sebelum tabel yang merujuknya.`,
+  example:`CREATE TABLE induk (...);
+CREATE TABLE anak (
+  ...,
+  induk_id INTEGER NOT NULL REFERENCES induk(id)
+);`,
+  hints:[`Buat petugas dulu, lalu penugasan, dipisah titik koma.`,`petugas_id INTEGER NOT NULL REFERENCES petugas(id), laporan_id INTEGER NOT NULL REFERENCES laporan_polisi(id)`],
+  solution:`CREATE TABLE petugas (id INTEGER PRIMARY KEY, nama TEXT NOT NULL, pangkat TEXT);
+CREATE TABLE penugasan (id INTEGER PRIMARY KEY, petugas_id INTEGER NOT NULL REFERENCES petugas(id), laporan_id INTEGER NOT NULL REFERENCES laporan_polisi(id), tanggal_mulai TEXT NOT NULL);`,
+  verify:[V_STRUKTUR('petugas'), V_STRUKTUR('penugasan'), V_FK('penugasan')],
+  vlabels:[`Struktur petugas`,`Struktur penugasan`,`Foreign key penugasan`],
+  require:[/\bcreate\s+table\b/i,/\breferences\b/i], requireMsg:`Gunakan CREATE TABLE dengan REFERENCES.`,
+  win:`Rancanganmu sudah ternormalisasi: data petugas tersimpan sekali, dan penugasan hanya menyimpan kunci-kuncinya.` },
+
+/* ---- bonus ---- */
+{ ch:'bonus', concept:'CTE (WITH)', title:'Query yang diberi nama',
+  story:`Kamu ingin mencari penjual yang total karungnya di atas rata-rata. Query-nya mulai panjang, jadi pecah menjadi bagian yang diberi nama.`,
+  task:`Dengan WITH, buat hasil sementara total karung per warga_id, lalu tampilkan warga_id dan total yang di atas rata-rata total.`,
+  explain:`CTE (Common Table Expression) ditulis dengan WITH nama AS (query). Hasilnya bisa dipakai berkali-kali di query utama seperti tabel. CTE membuat query panjang lebih mudah dibaca daripada subquery bersarang.`,
+  example:`WITH t AS (
+  SELECT k, SUM(x) AS total FROM tabel GROUP BY k
+)
+SELECT * FROM t
+WHERE total > (SELECT AVG(total) FROM t);`,
+  hints:[`WITH t AS (SELECT warga_id, SUM(karung) AS total FROM penjualan_kopi GROUP BY warga_id)`,`SELECT warga_id, total FROM t WHERE total > (SELECT AVG(total) FROM t);`],
+  solution:`WITH t AS (SELECT warga_id, SUM(karung) AS total FROM penjualan_kopi GROUP BY warga_id) SELECT warga_id, total FROM t WHERE total > (SELECT AVG(total) FROM t);`,
+  require:[/^\s*with\b/i], requireMsg:`Mulai query dengan WITH.` },
+{ ch:'bonus', concept:'ROW_NUMBER', title:'Penjualan ke berapa',
+  story:`Untuk setiap penjual, nomori penjualan mereka secara berurutan menurut tanggal.`,
+  task:`Tampilkan warga_id, tanggal, karung, dan nomor urut penjualan untuk setiap warga_id (diurutkan menurut tanggal, lalu id).`,
+  explain:`Window function menghitung nilai untuk setiap baris dengan melihat baris lain, tanpa meringkas seperti GROUP BY. ROW_NUMBER() OVER (PARTITION BY a ORDER BY b) memberi nomor 1, 2, 3… di dalam setiap kelompok a.`,
+  example:`SELECT kelompok, nilai,
+  ROW_NUMBER() OVER (PARTITION BY kelompok ORDER BY nilai) AS urutan
+FROM tabel;`,
+  hints:[`ROW_NUMBER() OVER (PARTITION BY warga_id ORDER BY tanggal, id)`,`SELECT warga_id, tanggal, karung, ROW_NUMBER() OVER (…) AS ke FROM penjualan_kopi;`],
+  solution:`SELECT warga_id, tanggal, karung, ROW_NUMBER() OVER (PARTITION BY warga_id ORDER BY tanggal, id) AS ke FROM penjualan_kopi;`,
+  require:[/row_number\s*\(\s*\)\s*over/i], requireMsg:`Gunakan ROW_NUMBER() OVER (…).` },
+{ ch:'bonus', concept:'RANK', title:'Peringkat kerugian',
+  story:`Buat peringkat semua laporan berdasarkan nilai kerugian, dari yang terbesar.`,
+  task:`Tampilkan id, kerugian, dan peringkatnya dengan RANK() berdasarkan kerugian dari yang terbesar.`,
+  explain:`RANK() memberi peringkat dengan lompatan jika ada nilai sama (1, 2, 2, 4). DENSE_RANK() tanpa lompatan (1, 2, 2, 3). ROW_NUMBER() selalu berbeda untuk setiap baris.`,
+  example:`SELECT nama, nilai,
+  RANK() OVER (ORDER BY nilai DESC) AS peringkat
+FROM tabel;`,
+  hints:[`RANK() OVER (ORDER BY kerugian DESC)`,`SELECT id, kerugian, RANK() OVER (ORDER BY kerugian DESC) AS peringkat FROM laporan_polisi;`],
+  solution:`SELECT id, kerugian, RANK() OVER (ORDER BY kerugian DESC) AS peringkat FROM laporan_polisi;`,
+  require:[/\brank\s*\(\s*\)\s*over/i], requireMsg:`Gunakan RANK() OVER (…).` },
+{ ch:'bonus', concept:'Total kumulatif', title:'Karung yang terus bertambah',
+  story:`Gambarkan berapa total karung yang sudah beredar di pasar dari waktu ke waktu.`,
+  task:`Tampilkan id, tanggal, karung, dan total kumulatif karung, diurutkan menurut id.`,
+  explain:`SUM(x) OVER (ORDER BY y) menghasilkan total berjalan: setiap baris berisi jumlah semua baris sebelumnya ditambah dirinya. Ini dipakai untuk grafik pertumbuhan, saldo, dan sejenisnya.`,
+  example:`SELECT tanggal, nilai,
+  SUM(nilai) OVER (ORDER BY tanggal) AS kumulatif
+FROM tabel;`,
+  hints:[`SUM(karung) OVER (ORDER BY id)`,`SELECT id, tanggal, karung, SUM(karung) OVER (ORDER BY id) AS kumulatif FROM penjualan_kopi;`],
+  solution:`SELECT id, tanggal, karung, SUM(karung) OVER (ORDER BY id) AS kumulatif FROM penjualan_kopi;`,
+  require:[/\bsum\s*\([^)]*\)\s*over/i], requireMsg:`Gunakan SUM(…) OVER (…).` },
+
+/* ---- ujian ---- */
+{ ch:'ujian', exam:true, concept:'Ujian: WHERE & ORDER BY', title:'Soal 1',
+  story:`Ujian akhir tidak menyediakan petunjuk dan jawaban. Kerjakan dengan apa yang sudah kamu pelajari.`,
+  task:`Tampilkan nama dan tahun_lahir warga yang lahir tahun 1990 atau sesudahnya, urut dari yang termuda.`,
+  solution:`SELECT nama, tahun_lahir FROM warga WHERE tahun_lahir >= 1990 ORDER BY tahun_lahir DESC;`, orderMatters:true },
+{ ch:'ujian', exam:true, concept:'Ujian: JOIN & HAVING', title:'Soal 2',
+  story:`Ujian akhir · tanpa petunjuk.`,
+  task:`Tampilkan nama saksi dan jumlah kesaksiannya, hanya untuk warga yang bersaksi lebih dari satu kali.`,
+  solution:`SELECT w.nama, COUNT(*) AS jumlah FROM saksi s JOIN warga w ON s.warga_id = w.id GROUP BY w.id, w.nama HAVING COUNT(*) > 1;` },
+{ ch:'ujian', exam:true, concept:'Ujian: LEFT JOIN & COUNT', title:'Soal 3',
+  story:`Ujian akhir · tanpa petunjuk.`,
+  task:`Tampilkan nama setiap warga dan jumlah kendaraannya. Warga tanpa kendaraan tetap tampil dengan jumlah 0.`,
+  solution:`SELECT w.nama, COUNT(k.no_plat) AS jumlah FROM warga w LEFT JOIN kendaraan k ON k.warga_id = w.id GROUP BY w.id, w.nama;` },
+{ ch:'ujian', exam:true, concept:'Ujian: subquery', title:'Soal 4',
+  story:`Ujian akhir · tanpa petunjuk.`,
+  task:`Tampilkan nama (tanpa duplikat) warga yang pernah menjual kopi dengan harga_per_karung di bawah rata-rata harga semua penjualan.`,
+  solution:`SELECT DISTINCT w.nama FROM warga w JOIN penjualan_kopi p ON p.warga_id = w.id WHERE p.harga_per_karung < (SELECT AVG(harga_per_karung) FROM penjualan_kopi);` },
+{ ch:'ujian', exam:true, concept:'Ujian: CASE & GROUP BY', title:'Soal 5',
+  story:`Ujian akhir · tanpa petunjuk.`,
+  task:`Kelompokkan laporan menjadi 'Belum dihitung' (kerugian NULL), 'Besar' (kerugian 3000000 atau lebih), dan 'Kecil' (sisanya). Tampilkan kategori dan jumlah laporannya.`,
+  solution:`SELECT CASE WHEN kerugian IS NULL THEN 'Belum dihitung' WHEN kerugian >= 3000000 THEN 'Besar' ELSE 'Kecil' END AS kategori, COUNT(*) AS jumlah FROM laporan_polisi GROUP BY kategori;` },
+{ ch:'ujian', exam:true, type:'dml', concept:'Ujian: UPDATE', title:'Soal 6', needWhere:true,
+  story:`Ujian akhir · tanpa petunjuk.`,
+  task:`Dalam satu perintah UPDATE, ubah pekerjaan Grace Rondonuwu (id 10) menjadi Pedagang kopi dan isi tahun_lahir-nya 1985.`,
+  solution:`UPDATE warga SET pekerjaan = 'Pedagang kopi', tahun_lahir = 1985 WHERE id = 10;`,
+  verify:[`SELECT id, pekerjaan, tahun_lahir FROM warga ORDER BY id`], vlabels:[`Isi warga setelah query-mu`] },
+{ ch:'ujian', exam:true, type:'ddl', concept:'Ujian: CREATE TABLE', title:'Soal 7',
+  story:`Ujian akhir · tanpa petunjuk.`,
+  task:`Buat tabel saksi_ahli: id INTEGER PRIMARY KEY, nama TEXT NOT NULL, bidang TEXT, laporan_id INTEGER yang merujuk laporan_polisi(id).`,
+  solution:`CREATE TABLE saksi_ahli (id INTEGER PRIMARY KEY, nama TEXT NOT NULL, bidang TEXT, laporan_id INTEGER REFERENCES laporan_polisi(id));`,
+  verify:[V_STRUKTUR('saksi_ahli'), V_FK('saksi_ahli')], vlabels:[`Struktur saksi_ahli`,`Foreign key saksi_ahli`] },
+{ ch:'ujian', exam:true, type:'quiz', concept:'Ujian: desain', title:'Soal 8',
+  story:`Ujian akhir · tanpa petunjuk.`,
+  q:`Seorang petugas menambahkan kolom omzet (= karung × harga_per_karung) yang disimpan di tabel penjualan_kopi. Apa masalah utamanya?`,
+  options:[[`Kolom angka tidak boleh berisi hasil perkalian`,`Boleh saja secara teknis. Masalahnya ada di konsistensi data.`],
+           [`Omzet bisa tidak cocok lagi jika karung atau harga diubah; lebih aman dihitung saat query`,``],
+           [`Tabel jadi tidak punya primary key`,`Primary key tidak terpengaruh.`],
+           [`SQL tidak bisa menjumlahkan kolom omzet`,`SUM bisa dipakai pada kolom angka apa pun.`]], answer:1,
+  why:`Data turunan yang disimpan bisa tidak sinkron dengan sumbernya, mirip anomali update. Hitung saat dibutuhkan, atau gunakan view.` },
+];
+EXTRA.forEach(x=>{
+  if(x.after){ const i=LEVELS.findIndex(l=>l.concept===x.after); if(i>-1){ LEVELS.splice(i+1,0,x); return; } }
+  LEVELS.push(x);
+});
+(function(){
+  const order=CHAPTERS.map(c=>c.id);
+  const tagged=LEVELS.map((l,i)=>[l,i]);
+  tagged.sort((a,b)=> (order.indexOf(a[0].ch)-order.indexOf(b[0].ch)) || (a[1]-b[1]));
+  LEVELS.length=0; tagged.forEach(([l])=>{ l.ch=order.indexOf(l.ch); LEVELS.push(l); });
+})();
+
+/* tambahan kunci jawaban alternatif untuk beberapa level lama */
+const ALTS = {
+  'DISTINCT':[`SELECT kota FROM laporan_polisi GROUP BY kota;`],
+  'OR & IN':[`SELECT nama, pekerjaan FROM warga WHERE pekerjaan = 'Petani kopi' OR pekerjaan = 'Pedagang';`],
+  'LEFT JOIN':[`SELECT nama FROM warga WHERE id NOT IN (SELECT warga_id FROM kendaraan);`,`SELECT w.nama FROM warga w WHERE NOT EXISTS (SELECT 1 FROM kendaraan k WHERE k.warga_id = w.id);`],
+  'JOIN 3 tabel':[`SELECT nama FROM warga WHERE id IN (SELECT warga_id FROM kendaraan WHERE warna = 'Hijau' AND no_plat LIKE 'DB 8%') AND id IN (SELECT warga_id FROM log_gudang WHERE tanggal = '2026-10-12');`],
+  'IN (subquery)':[`SELECT DISTINCT w.nama FROM warga w JOIN log_gudang l ON l.warga_id = w.id WHERE l.tanggal = '2026-10-12';`],
+  'Subquery skalar':[`WITH r AS (SELECT AVG(kerugian) AS rata FROM laporan_polisi) SELECT id, jenis, kerugian FROM laporan_polisi, r WHERE kerugian > r.rata;`],
+  'BETWEEN':[`SELECT id, tanggal, jenis FROM laporan_polisi WHERE tanggal >= '2026-10-10' AND tanggal <= '2026-10-15';`],
+};
+LEVELS.forEach(l=>{ if(ALTS[l.concept] && !l.alt) l.alt=ALTS[l.concept]; });
+
+/* ===================== KATEGORI KESALAHAN ===================== */
+const CATS = {
+  teori:{label:'Konsep teori keliru', tip:'', rec:''},
+  sintaks:{label:'Sintaks / ejaan kata kunci', tip:'Periksa ejaan kata kunci (SELECT, FROM, WHERE) dan urutannya: SELECT → FROM → JOIN → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT.', rec:'Hafalkan urutan klausa SELECT → FROM → JOIN → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT. Tulis kerangkanya dulu, baru isi detailnya.'},
+  tabel:{label:'Nama tabel salah', tip:'Tabel itu tidak ada. Klik nama tabel di panel Skema supaya ejaannya pasti benar.', rec:'Biasakan mengecek skema sebelum menulis query. Nama tabel harus persis, termasuk garis bawah.'},
+  kolomNama:{label:'Nama kolom salah', tip:'Kolom itu tidak ada di tabel yang kamu pakai. Cek daftar kolom di panel Skema.', rec:'Saat ragu, jalankan SELECT * FROM tabel LIMIT 1 untuk melihat nama kolom yang tersedia.'},
+  kutip:{label:'Tanda kutip / kurung belum ditutup', tip:"Ada tanda kutip atau kurung yang belum ditutup. Teks ditulis dalam kutip tunggal: 'Hijau'.", rec:"Setiap teks dan tanggal diapit kutip tunggal di kedua sisi. Hitung pasangan kutip dan kurung sebelum menjalankan query."},
+  ambigu:{label:'Kolom ambigu saat JOIN', tip:'Kolom ini ada di lebih dari satu tabel. Tulis awalannya, misalnya k.warga_id atau w.id.', rec:'Dalam JOIN, beri alias pendek pada tiap tabel (warga w, kendaraan k) dan selalu tulis w.kolom atau k.kolom.'},
+  agregat:{label:'Salah pakai fungsi agregat', tip:'COUNT, SUM, dan sejenisnya tidak boleh di WHERE. Untuk menyaring hasil hitungan, pakai HAVING.', rec:'Bedakan WHERE (menyaring baris sebelum dikelompokkan) dan HAVING (menyaring kelompok setelah dihitung).'},
+  jumlahNilai:{label:'Jumlah nilai INSERT tidak cocok', tip:'Banyaknya nilai di VALUES harus sama dengan banyaknya kolom yang disebut (atau semua kolom tabel jika tidak menyebut kolom).', rec:'Saat INSERT, selalu sebutkan daftar kolom secara eksplisit, lalu cocokkan jumlah nilainya.'},
+  sudahAda:{label:'Tabel/kolom sudah ada', tip:'Nama itu sudah dipakai. Periksa apakah kamu membuat tabel atau kolom yang sudah ada.', rec:'Periksa skema sebelum CREATE atau ALTER. Nama tabel dan kolom harus unik.'},
+  constraintPK:{label:'Melanggar PRIMARY KEY / UNIQUE', tip:'Nilai itu sudah dipakai baris lain di kolom yang harus unik. Gunakan nilai lain.', rec:'Cek nilai yang sudah ada (misalnya SELECT MAX(id)) sebelum menambah baris dengan id manual.'},
+  constraintNN:{label:'Melanggar NOT NULL', tip:'Kolom wajib tidak boleh kosong. Pastikan kolom itu disebut dan diisi di INSERT.', rec:'Kenali kolom NOT NULL di setiap tabel dan selalu isi kolom itu saat INSERT.'},
+  constraintCK:{label:'Melanggar CHECK', tip:'Nilai yang dimasukkan tidak memenuhi syarat CHECK pada kolom itu.', rec:'Baca aturan CHECK di definisi tabel sebelum memasukkan data.'},
+  constraintFK:{label:'Melanggar FOREIGN KEY', tip:'Nilai foreign key menunjuk data yang tidak ada di tabel induk.', rec:'Pastikan data induk sudah ada sebelum menambah data anak yang merujuknya.'},
+  errLain:{label:'Error lain', tip:'SQL menolak query ini. Baca pesan aslinya di bawah, lalu cek bagian yang disebut.', rec:'Baca pesan error sampai habis. SQLite biasanya menyebut kata tempat ia bingung.'},
+  bukanTabel:{label:'Query tidak menampilkan tabel', tip:'Query berjalan tapi tidak menghasilkan tabel. Untuk tugas ini, tulis SELECT.', rec:'Bedakan perintah yang membaca data (SELECT) dan yang mengubah data (INSERT, UPDATE, DELETE).'},
+  kolom:{label:'Jumlah kolom tidak sesuai', tip:'Jumlah kolom hasilmu berbeda dari yang diminta. Baca lagi kolom apa saja yang perlu ditampilkan.', rec:'Tulis kolom yang diminta satu per satu setelah SELECT. Pakai * hanya jika diminta semua kolom.'},
+  urutanKolom:{label:'Urutan kolom tertukar', tip:'Isinya sudah benar, tapi urutan kolomnya berbeda. Tulis kolom sesuai urutan di tugas.', rec:'Urutan kolom di hasil mengikuti urutan penulisan di SELECT.'},
+  alias:{label:'Judul kolom (alias) belum sesuai', tip:'Datanya sudah benar, tapi judul kolomnya belum sama dengan yang diminta. Gunakan AS.', rec:'Alias ditulis setelah kolom dengan AS dan dieja persis seperti yang diminta.'},
+  kosong:{label:'Filter tidak menemukan data', tip:'Hasilnya kosong. Biasanya nilai di WHERE salah ketik atau beda huruf besar-kecil. Intip data aslinya dengan SELECT *.', rec:"Perbandingan = peka huruf besar-kecil: 'hijau' tidak sama dengan 'Hijau'. Intip data aslinya sebelum menulis syarat."},
+  nullEq:{label:'Membandingkan NULL dengan =', tip:'= NULL tidak pernah benar, karena NULL berarti "tidak diketahui". Gunakan IS NULL atau IS NOT NULL.', rec:'Selalu pakai IS NULL / IS NOT NULL untuk memeriksa nilai kosong.'},
+  lebih:{label:'Baris berlebih (filter kurang)', tip:'Hasilmu memuat baris yang tidak diminta. Ada syarat yang belum ditulis di WHERE.', rec:'Hitung berapa syarat yang disebut di soal, lalu pastikan semuanya ada di WHERE.'},
+  kurang:{label:'Baris kurang (filter terlalu ketat)', tip:'Ada baris yang seharusnya muncul tapi tersaring. Cek syarat WHERE, pola LIKE, atau jenis JOIN.', rec:'Saat hasil kurang, hapus syarat satu per satu untuk melihat mana yang terlalu ketat.'},
+  urutan:{label:'Urutan baris salah', tip:'Barisnya sudah benar, tapi urutannya belum. Periksa ORDER BY, ASC/DESC, dan LIMIT.', rec:'Tanpa ORDER BY, urutan hasil tidak dijamin. Tulis ORDER BY setiap kali urutan penting.'},
+  isi:{label:'Isi data berbeda', tip:'Jumlah baris sama, tapi isinya berbeda. Cek kolom yang dipilih dan syarat di WHERE.', rec:'Bandingkan hasilmu dengan target baris per baris. Biasanya ada kolom yang tertukar atau syarat yang salah sasaran.'},
+  dml:{label:'Perubahan data tidak sesuai', tip:'Isi tabel setelah query-mu berbeda dari yang diminta. Periksa nilai, kolom, dan baris yang kamu ubah.', rec:'Sebelum INSERT, UPDATE, atau DELETE, jalankan SELECT dengan WHERE yang sama untuk memastikan baris yang tersentuh.'},
+  tanpaWhere:{label:'UPDATE/DELETE tanpa WHERE', tip:'Tanpa WHERE, perintah ini mengenai SEMUA baris tabel. Tambahkan WHERE id = ….', rec:'Jangan pernah menjalankan UPDATE atau DELETE tanpa WHERE di data sungguhan.'},
+  struktur:{label:'Struktur tabel tidak sesuai', tip:'Tabel yang terbentuk berbeda dari yang diminta. Cek nama kolom, urutannya, PRIMARY KEY, NOT NULL, dan REFERENCES.', rec:'Tulis rancangan tabel (kolom, tipe, kunci) sebelum CREATE TABLE, lalu cocokkan satu per satu.'},
+  tidakError:{label:'Constraint tidak teruji', tip:'Query-mu diterima database, padahal tugasnya memicu penolakan. Pastikan nilai yang kamu masukkan memang melanggar aturan.', rec:'Pahami aturan setiap constraint: PRIMARY KEY/UNIQUE menolak nilai kembar, NOT NULL menolak kosong, FOREIGN KEY menolak rujukan yang tidak ada.'},
+  konsep:{label:'Konsep yang diminta belum dipakai', tip:'', rec:'Hasil benar saja belum cukup. Latih konsep yang diminta agar bisa dipakai di data yang lebih besar.'},
+};
+
+/* ===================== STATE ===================== */
+const KEY='kasus-kopi-hilang-v3';
+let SQL=null, EXP=[];
+let S=newState();
+let last=null;
+function newState(){ return {screen:'cover', lvl:0, startedAt:null, finishedAt:null, mapOpen:true,
+  stats:LEVELS.map(()=>({attempts:0,mistakes:0,hints:0,revealed:false,solved:false,ms:0,firstTry:false,picked:[]})),
+  mistakes:[], drafts:{}, lvlStart:null }; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const t=localStorage.getItem(KEY); const d=t?JSON.parse(t):null; return d && d.stats && d.stats.length===LEVELS.length ? d : null; }catch(e){ return null; } }
+
+/* ===================== SQL ===================== */
+function exec(q, L){
+  const db=new SQL.Database();
+  try{
+    db.run('PRAGMA foreign_keys = ON;'); db.run(SEED); if(L && L.setup) db.run(L.setup);
+    let r; try{ r=db.exec(q); }catch(e){ return {ok:false, err:String(e.message||e)}; }
+    const res = r.length ? r[r.length-1] : null;
+    let checks=null;
+    if(L && L.verify) checks=L.verify.map(v=>{
+      try{ const x=db.exec(v); return x.length ? x[x.length-1] : {columns:[],values:[]}; }
+      catch(e){ const m=String(e.message||e).match(/^(.*?constraint failed)/i); return {columns:['hasil_uji'], values:[[m ? 'ditolak: '+m[1].toUpperCase() : 'error: '+String(e.message||e)]]}; }
+    });
+    return {ok:true, res, checks};
+  } finally { db.close(); }
+}
+const cell = v => v===null ? '∅NULL' : String(v);
+const rowKey = r => r.map(cell).join('␟');
+function classifyError(msg){
+  const m=msg.toLowerCase();
+  if(m.includes('no such table')) return 'tabel';
+  if(m.includes('no such column') || m.includes('has no column named')) return 'kolomNama';
+  if(m.includes('ambiguous column')) return 'ambigu';
+  if(m.includes('unique constraint failed')) return 'constraintPK';
+  if(m.includes('not null constraint failed')) return 'constraintNN';
+  if(m.includes('foreign key constraint failed')) return 'constraintFK';
+  if(m.includes('check constraint failed')) return 'constraintCK';
+  if(m.includes('values were supplied') || m.includes('values for')) return 'jumlahNilai';
+  if(m.includes('already exists') || m.includes('duplicate column')) return 'sudahAda';
+  if(m.includes('incomplete input') || m.includes('unrecognized token') || m.includes('unterminated')) return 'kutip';
+  if(m.includes('misuse of aggregate') || m.includes('aggregate')) return 'agregat';
+  if(m.includes('syntax error') || m.includes('near')) return 'sintaks';
+  return 'errLain';
+}
+function compare(u, e, orderMatters, q){
+  if(!u) return /^\s*(select|with)\b/i.test(q||'') ? 'kosong' : 'bukanTabel';
+  if(u.columns.length!==e.columns.length) return 'kolom';
+  const ur=u.values, er=e.values;
+  if(ur.length===0 && er.length>0) return 'kosong';
+  const uk=ur.map(rowKey), ek=er.map(rowKey);
+  if([...uk].sort().join('|')===[...ek].sort().join('|')){
+    if(orderMatters && uk.join('|')!==ek.join('|')) return 'urutan';
+    return null;
+  }
+  const flat = rs => rs.flat().map(cell).sort().join('|');
+  if(ur.length===er.length && flat(ur)===flat(er)) return 'urutanKolom';
+  if(ur.length>er.length) return 'lebih';
+  if(ur.length<er.length) return 'kurang';
+  return 'isi';
+}
+
+/* ===================== AKSI ===================== */
+function startGame(){ S=newState(); S.screen='game'; S.startedAt=Date.now(); S.lvlStart=Date.now(); last=null; save(); render(); }
+const curLv = () => LEVELS[S.lvl];
+const freshStat = () => ({attempts:0,mistakes:0,hints:0,revealed:false,solved:false,ms:0,firstTry:false,picked:[]});
+const stat = () => S.review ? S.review.st[S.lvl] : S.stats[S.lvl];
+const draftKey = () => S.review ? 'r'+S.lvl : S.lvl;
+function addMistake(cat, q, detail, raw){ stat().mistakes++; S.mistakes.push({lvl:S.lvl, q, cat, detail, raw, t:Date.now(), review:!!S.review}); }
+function markSolved(){ const st=stat(); st.solved=true; st.ms=Date.now()-(S.lvlStart||Date.now()); st.firstTry = st.mistakes===0 && st.hints===0 && !st.revealed; }
+
+function submit(){
+  const ta=document.getElementById('sql'); const q=ta.value.trim();
+  if(!q){ ta.focus(); return; }
+  const L=curLv(), st=stat(); if(st.solved) return;
+  st.attempts++;
+  const r=exec(q, L);
+  const type=L.type||'query';
+  let cat=null, detail='', raw='';
+  if(!r.ok){
+    raw=r.err;
+    if(type==='error' && L.expectErr.test(r.err) && (!L.require || L.require.every(x=>x.test(q)))) cat=null;
+    else {
+      cat=classifyError(r.err);
+      const near=r.err.match(/near "([^"]*)"/i); if(near) detail = near[1] ? `SQL bingung di dekat «${near[1]}».` : 'Query terpotong sebelum selesai.';
+      const col=r.err.match(/no such column: (\S+)/i); if(col) detail=`Kolom «${col[1]}» tidak dikenal.`;
+      const tb=r.err.match(/no such table: (\S+)/i); if(tb) detail=`Tabel «${tb[1]}» tidak ada.`;
+      if(type==='error' && /constraint failed/i.test(r.err)) detail='Database memang menolak, tapi karena aturan yang lain. Baca lagi tugasnya.';
+    }
+  } else if(type==='error'){
+    cat='tidakError';
+  } else if(type==='dml' || type==='ddl'){
+    for(let i=0;i<L.verify.length;i++){
+      const c=compare(r.checks[i], EXP[S.lvl][i], true, 'select');
+      if(c){ cat = type==='ddl' ? 'struktur' : 'dml'; detail='Perbedaannya: '+CATS[c].label.toLowerCase()+'.'; break; }
+    }
+    if(cat && L.needWhere && !/\bwhere\b/i.test(q)){ cat='tanpaWhere'; detail=''; }
+    if(!cat && L.require && !L.require.every(x=>x.test(q))) cat='konsep';
+  } else {
+    cat=compare(r.res, EXP[S.lvl], L.orderMatters, q);
+    if(cat==='kosong' && /(=|<>|!=)\s*null\b/i.test(q)) cat='nullEq';
+    if(!cat && L.checkNames){ const a=r.res.columns.map(c=>c.toLowerCase()).join(','), b=EXP[S.lvl].columns.map(c=>c.toLowerCase()).join(','); if(a!==b){ cat='alias'; detail=`Judul kolommu: ${r.res.columns.join(', ')}. Yang diminta: ${EXP[S.lvl].columns.join(', ')}.`; } }
+    if(!cat && L.require && !L.require.every(x=>x.test(q))) cat='konsep';
+    if(cat==='kolom') detail=`Hasilmu ${r.res.columns.length} kolom, yang diminta ${EXP[S.lvl].columns.length} kolom.`;
+    if(cat==='lebih'||cat==='kurang') detail=`Hasilmu ${r.res.values.length} baris, targetnya ${EXP[S.lvl].values.length} baris.`;
+  }
+  if(!cat && L.requireNot && L.requireNot.test(q)){ cat='konsep'; }
+  if(cat==='konsep') detail = (L.requireNot && L.requireNot.test(q) && L.requireNotMsg) ? L.requireNotMsg : L.requireMsg;
+  last={q, r, cat, detail, raw};
+  if(cat) addMistake(cat, q, detail, raw); else markSolved();
+  S.drafts[draftKey()]=q; save(); render(true);
+}
+function pick(i){
+  const L=curLv(), st=stat(); if(st.solved || st.picked.includes(i)) return;
+  st.attempts++; st.picked.push(i);
+  if(i===L.answer){ last={quiz:true, ok:true}; markSolved(); }
+  else { last={quiz:true, ok:false, i}; addMistake('teori', L.options[i][0], `${L.concept}: memilih «${L.options[i][0]}»`, ''); }
+  save(); render(true);
+}
+function useHint(){ const st=stat(), L=curLv(); if(L.exam) return; const n=L.type==='quiz'?1:L.hints.length; if(st.hints<n){ st.hints++; save(); render(); } }
+function reveal(){ const st=stat(); if(curLv().exam) return; st.revealed=true; S.drafts[draftKey()]=curLv().solution; save(); render(); }
+function goto(i){ last=null; S.lvl=i; S.lvlStart=Date.now(); save(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+function startReview(queue){ if(!queue.length) return; S.review={queue, pos:0, st:{}}; queue.forEach(i=>S.review.st[i]=freshStat()); queue.forEach(i=>delete S.drafts['r'+i]); S.screen='game'; last=null; goto(queue[0]); }
+function endReview(){ if(S.review) S.lastReview={queue:S.review.queue, st:S.review.st}; S.review=null; finish(); }
+function nextLevel(){
+  if(S.review){ S.review.pos++; if(S.review.pos<S.review.queue.length) goto(S.review.queue[S.review.pos]); else endReview(); return; }
+  const n=S.stats.findIndex((s,i)=>i>S.lvl && !s.solved);
+  if(n>-1) goto(n); else { const a=S.stats.findIndex(s=>!s.solved); if(a>-1) goto(a); else finish(); }
+}
+function finish(){ last=null; S.screen='eval'; S.finishedAt=Date.now(); save(); render(); window.scrollTo({top:0}); }
+function insert(text){
+  const ta=document.getElementById('sql'); if(!ta || ta.readOnly) return;
+  const s=ta.selectionStart, e=ta.selectionEnd;
+  ta.value=ta.value.slice(0,s)+text+ta.value.slice(e); ta.selectionStart=ta.selectionEnd=s+text.length; ta.focus(); S.drafts[draftKey()]=ta.value;
+}
+
+/* ===================== RENDER BANTU ===================== */
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtTime = ms => { const s=Math.max(0,Math.round(ms/1000)); const m=Math.floor(s/60); return `${m}:${String(s%60).padStart(2,'0')}`; };
+const app = () => document.getElementById('app');
+const solvedCount = () => S.stats.filter(s=>s.solved).length;
+
+function tableHTML(res){
+  if(!res || !res.columns.length) return '<div class="empty">Tidak ada baris yang ditampilkan (0 baris).</div>';
+  if(!res.values.length) return `<div class="empty">0 baris. Kolom: ${res.columns.map(esc).join(', ')}</div>`;
+  return `<table><thead><tr>${res.columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${
+    res.values.map(r=>`<tr>${r.map(v=>v===null?'<td class="null">NULL</td>':`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function erdSVG(){
+  const W=170, HH=26, RH=18;
+  const T=[
+    ['ktp',20,10,[['nik','PK'],['warga_id','FK·UQ'],['tempat_lahir','']]],
+    ['kendaraan',20,150,[['no_plat','PK'],['warga_id','FK'],['merek',''],['jenis',''],['warna',''],['tahun','']]],
+    ['warga',250,120,[['id','PK'],['nama',''],['alamat',''],['pekerjaan',''],['tahun_lahir','']]],
+    ['saksi',480,10,[['id','PK'],['laporan_id','FK'],['warga_id','FK'],['keterangan','']]],
+    ['log_gudang',480,135,[['id','PK'],['warga_id','FK'],['tanggal',''],['jam_masuk',''],['jam_keluar','']]],
+    ['penjualan_kopi',480,278,[['id','PK'],['warga_id','FK'],['tanggal',''],['karung',''],['harga_per_karung','']]],
+    ['laporan_polisi',700,10,[['id','PK'],['tanggal',''],['kota',''],['jenis',''],['kerugian',''],['deskripsi','']]],
+  ];
+  const boxes=T.map(([n,x,y,cs])=>{
+    const h=HH+cs.length*RH+6;
+    return `<g><rect class="box" x="${x}" y="${y}" width="${W}" height="${h}" rx="5"/>
+      <path class="hdr" d="M${x+5} ${y}h${W-10}a5 5 0 0 1 5 5v${HH-5}h-${W}v-${HH-5}a5 5 0 0 1 5-5z"/>
+      <text class="tn" x="${x+10}" y="${y+17}">${n}</text>
+      ${cs.map(([c,k],i)=>`<text class="cn" x="${x+10}" y="${y+HH+i*RH+13}">${c}</text>${k?`<text class="${k==='PK'?'pk':'fk'}" x="${x+W-8}" y="${y+HH+i*RH+13}" text-anchor="end">${k}</text>`:''}`).join('')}
+    </g>`;
+  }).join('');
+  const rels=['M250 155 H222 V63 H190','M250 155 H222 V203 H190','M420 155 H452 V81 H480','M420 155 H452 V188 H480','M420 155 H452 V331 H480','M650 63 H676 V45 H700'];
+  const cards=[[244,150,'1','end'],[196,58,'1','start'],[196,198,'N','start'],[426,150,'1','start'],
+    [474,76,'N','end'],[474,183,'N','end'],[474,326,'N','end'],[656,58,'N','start'],[694,40,'1','end']];
+  return `<svg viewBox="0 0 900 410" role="img" aria-label="Diagram relasi antar-tabel database kasus">
+    ${rels.map(d=>`<path class="rel" d="${d}"/>`).join('')}${boxes}
+    ${cards.map(([x,y,t,a])=>`<text class="card" x="${x}" y="${y}" text-anchor="${a}">${t}</text>`).join('')}</svg>`;
+}
+
+function mapHTML(){
+  return `<details class="map" id="map" ${S.mapOpen?'open':''}>
+    <summary>Peta materi · ${CHAPTERS.length} bab, ${LEVELS.length} level<span>klik nomor untuk pindah level kapan saja</span></summary>
+    <div class="chapters">${CHAPTERS.map((c,ci)=>{
+      const idx=LEVELS.map((l,i)=>[l,i]).filter(([l])=>l.ch===ci);
+      const done=idx.filter(([,i])=>S.stats[i].solved).length;
+      return `<div class="ch"><div class="t"><span class="no">BAB ${ci+1}</span>${esc(c.n)}<span class="pc">${done}/${idx.length}</span></div>
+        <div class="dots">${idx.map(([l,i])=>{ const s=S.stats[i];
+          const cls=[s.solved?(s.revealed?'helped':'done'):(s.mistakes?'tried':''), i===S.lvl?'now':''].join(' ');
+          return `<button class="dot ${cls}" data-go="${i}" title="${esc(l.concept)}" aria-label="Level ${i+1}: ${esc(l.concept)}">${i+1}</button>`; }).join('')}</div></div>`;
+    }).join('')}</div></details>`;
+}
+
+/* ===================== LAYAR ===================== */
+function renderCover(){
+  const saved=load(); const canResume = saved && saved.screen!=='cover';
+  app().innerHTML=`
+  <div class="top"><div><span class="case-no">DIVISI DATA KRIMINAL · KOTA LEMBAH</span><h1>Kasus Kopi Hilang</h1></div></div>
+  <section class="cover">
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <span class="secret">RAHASIA</span>
+      <h2>40 karung robusta lenyap dalam satu malam.</h2>
+      <p class="lead">Kamu analis data baru di kepolisian Kota Lembah. Pelajari cara kerja database dari nol, pakai SQL untuk melacak pelakunya, lalu bangun sendiri tabel untuk mencatat barang buktinya.</p>
+      <ul class="syll">${CHAPTERS.map((c,i)=>`<li><span class="no">BAB ${i+1} · ${LEVELS.filter(l=>l.ch===i).length} level</span><b>${esc(c.n)}</b>${esc(c.d)}</li>`).join('')}</ul>
+      <div class="row">
+        <button class="btn red" id="start">${canResume?'Mulai ulang dari awal':'Mulai penyelidikan'}</button>
+        ${canResume?`<button class="btn" id="resume">Lanjutkan (${saved.stats.filter(s=>s.solved).length}/${LEVELS.length} selesai)</button>`:''}
+        <button class="btn ghost" id="sbxCover">Buka sandbox</button>
+      </div>
+    </div>
+    <aside class="how">
+      <span class="label">Cara bermain</span>
+      <ol>
+        <li>Materi teori dijawab lewat kuis, lengkap dengan diagram relasinya. Materi SQL dikerjakan di database sungguhan yang berjalan di browsermu. Jalankan query dengan tombol atau <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span>.</li>
+        <li>Setiap kesalahan dicatat beserta jenis dan penyebabnya. Petunjuk tersedia, jawaban bisa dibuka setelah 3 kesalahan, dan pembahasan muncul setelah kamu benar.</li>
+        <li>Bab terakhir adalah ujian tanpa petunjuk. Setelah evaluasi, kamu bisa mengulang otomatis level yang paling sering salah.</li>
+        <li>Sandbox tersedia untuk mencoba query bebas tanpa dinilai. Kamu juga bebas melompat antar-level lewat peta materi.</li>
+      </ol>
+    </aside>
+  </section>
+  ${promoHTML()}`;
+  document.getElementById('start').onclick=startGame;
+  const rs=document.getElementById('resume'); if(rs) rs.onclick=()=>{ S=saved; S.review=null; if(S.screen==='sandbox') S.screen='game'; S.lvlStart=Date.now(); last=null; render(); };
+  document.getElementById('sbxCover').onclick=()=>{ if(saved && !canResume){} openSandbox(); };
+}
+
+function renderGame(justRan){
+  const L=curLv(), st=stat(), type=L.type||'query', isQuiz=type==='quiz';
+  const draft=S.drafts[draftKey()] ?? '';
+  const ch=CHAPTERS[L.ch];
+  const nHints=L.exam?0:(isQuiz?1:L.hints.length);
+  const RV=S.review;
+
+  let fb='';
+  if(last && last.quiz && !last.ok){
+    fb=`<div class="feedback bad" role="status"><div class="head"><span class="cat">KESALAHAN #${st.mistakes}</span>Belum tepat</div><p>${esc(L.options[last.i][1])}</p><p class="target">Pilih jawaban lain.</p></div>`;
+  } else if(last && !last.quiz && last.cat){
+    const c=CATS[last.cat]; const tip = last.cat==='konsep' ? last.detail : c.tip;
+    fb=`<div class="feedback bad" role="status"><div class="head"><span class="cat">KESALAHAN #${st.mistakes}</span>${esc(c.label)}</div>
+      <p>${esc(tip)}</p>${last.detail && last.cat!=='konsep'?`<p><b>${esc(last.detail)}</b></p>`:''}
+      ${last.raw?`<p class="raw">Pesan SQLite: ${esc(last.raw)}</p>`:''}</div>`;
+  }
+  const solvedBox = st.solved ? `<div class="feedback good" role="status"><div class="head"><span class="cat">BENAR</span>${type==='error'?'Database menolak, sesuai harapan.':'Tepat.'}</div>
+      ${type==='error' && last && last.raw ? `<p class="raw">Pesan SQLite: ${esc(last.raw)}</p>`:''}
+      <p>${esc(isQuiz ? L.why : (L.win || (st.firstTry?'Langsung tepat tanpa salah dan tanpa petunjuk.':'Hasilnya sudah tepat.')))}</p>
+      ${!isQuiz ? solutionHTML(L) : ''}
+      <div class="row"><button class="btn" id="next">${RV ? (RV.pos+1<RV.queue.length?'Soal ulang berikutnya':'Selesai latihan ulang') : (solvedCount()===LEVELS.length?'Lihat evaluasi':'Level berikutnya')} →</button></div></div>` : '';
+
+  const hintsShown = isQuiz ? (st.hints?`<div class="hint">💡 Coret dulu pilihan yang bertentangan dengan penjelasan di kotak konsep. Jawaban yang benar selalu sesuai dengan definisinya.</div>`:'')
+                            : (L.hints||[]).slice(0,st.hints).map(h=>`<div class="hint">💡 ${esc(h)}</div>`).join('');
+  const canReveal = !L.exam && !isQuiz && !st.solved && st.mistakes>=3 && !st.revealed;
+
+  const schema = L.extraTables ? SCHEMA.concat(L.extraTables) : SCHEMA;
+  let target='';
+  if(type==='query') target=`Target: <b>${EXP[S.lvl].values.length}</b> baris × <b>${EXP[S.lvl].columns.length}</b> kolom${L.orderMatters?' · urutan diperhitungkan':''}${L.checkNames?' · judul kolom diperiksa':''}`;
+  else if(type==='error') target='Target: database <b>menolak</b> query-mu';
+  else if(type==='dml') target='Diperiksa: <b>isi tabel</b> setelah query-mu dijalankan';
+  else target='Diperiksa: <b>struktur tabel</b> yang terbentuk';
+
+  let work='';
+  if(isQuiz){
+    work=`<section class="panel quiz"><span class="label">Pertanyaan</span><p class="q">${esc(L.q)}</p>
+      ${L.options.map((o,i)=>{ const cls = st.picked.includes(i) ? (i===L.answer?'right':'wrong') : (st.solved && i===L.answer ? 'right':'');
+        return `<button class="opt ${cls}" data-opt="${i}" ${st.solved||st.picked.includes(i)?'disabled':''}><span class="l">${'ABCD'[i]}</span><span>${esc(o[0])}</span></button>`; }).join('')}
+      ${fb}${solvedBox}</section>`;
+  } else {
+    let resBlock='';
+    if(last && !last.quiz && last.r && last.r.ok){
+      if((type==='dml'||type==='ddl') && last.r.checks) resBlock=last.r.checks.map((c,i)=>`<span class="label">${esc((L.vlabels&&L.vlabels[i]) || (L.verifyLabel + (L.verify.length>1?(i?' · foreign key':' · kolom'):'')))}</span><div class="result">${tableHTML(c)}</div>`).join('');
+      else if(type==='query') resBlock=`<span class="label">Hasil query-mu · ${last.r.res?last.r.res.values.length:0} baris</span><div class="result">${tableHTML(last.r.res)}</div>`;
+    }
+    work=`<section class="panel">
+        <span class="label">Skema database · klik untuk menyisipkan · <span style="color:var(--stamp)">merah</span> = PK · <span style="color:var(--key)">biru</span> = FK</span>
+        <div class="schema">${schema.map(([t,cs])=>`<div class="tbl"><button data-ins="${t}">${t}</button><div class="cols">${cs.map(([c,k])=>`<button class="${k==='P'?'k':k==='F'?'f':''}" data-ins="${c}">${c}</button>`).join('')}</div></div>`).join('')}</div>
+      </section>
+      <section class="panel">
+        <label class="label" for="sql">Query SQL</label>
+        <textarea id="sql" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Tulis query di sini…" ${st.solved?'readonly':''}>${esc(draft)}</textarea>
+        <div class="row" style="justify-content:space-between">
+          <button class="btn red" id="run" ${st.solved?'disabled':''}>Jalankan <span class="kbd">Ctrl+Enter</span></button>
+          <span class="target">${target}</span>
+        </div>
+        ${fb}${solvedBox}${resBlock}
+        <p class="target">Setiap query berjalan di salinan database yang segar, jadi kamu tidak bisa merusak datanya.</p>
+      </section>`;
+  }
+
+  app().innerHTML=`
+  <div class="top">
+    <div><span class="case-no">BAB ${L.ch+1} · ${esc(ch.n.toUpperCase())} · LEVEL ${S.lvl+1}/${LEVELS.length}</span><h1>Kasus Kopi Hilang</h1></div>
+    <div class="meta">${RV?'':`<span>Kesalahan: <b>${S.mistakes.filter(m=>!m.review).length}</b></span><span>Selesai: <b>${solvedCount()}/${LEVELS.length}</b></span>
+      <button class="btn ghost sm" id="toSbx">Sandbox</button><button class="btn ghost sm" id="toEval">Lihat evaluasi</button>`}</div>
+  </div>
+  ${RV?`<div class="banner"><span><b>Latihan ulang ${RV.pos+1} dari ${RV.queue.length}.</b> Kerjakan lagi dari nol, tanpa melihat jawaban lamamu. Hasilnya tidak mengubah nilai utama.</span><button class="btn ghost sm" id="endRv">Akhiri latihan ulang</button></div>`:mapHTML()}
+  ${L.exam && !RV?`<div class="banner exam"><span><b>Ujian akhir.</b> Tidak ada petunjuk, kotak konsep, maupun tombol jawaban. Setiap kesalahan tetap dicatat.</span></div>`:''}
+  <div class="game">
+    <article class="folder ${st.solved?'solved':''}" data-tab="LEVEL ${String(S.lvl+1).padStart(2,'0')} · ${esc(L.concept.toUpperCase())}">
+      ${st.solved?`<div class="stampmark ${st.revealed?'helped':''} ${justRan?'anim':''}">${st.revealed?'DIBANTU':'SELESAI'}</div>`:''}
+      <h2>${esc(L.title)}</h2>
+      <p class="story">${L.story}</p>
+      ${L.task?`<div class="task"><span class="label" style="color:var(--stamp)">Tugas</span><p>${esc(L.task)}</p></div>`:''}
+      ${L.exam?'':`<div class="concept"><span class="label">Konsep: ${esc(L.concept)}</span><p>${esc(L.explain)}</p><pre>${esc(L.example)}</pre></div>`}
+      <div class="hints">${hintsShown}</div>
+      ${!st.solved && !L.exam?`<div class="row">
+        <button class="btn ghost" id="hint" ${st.hints>=nHints?'disabled':''}>Minta petunjuk (${nHints-st.hints} tersisa)</button>
+        ${canReveal?'<button class="btn ghost" id="reveal">Tampilkan jawaban</button>':''}
+      </div>`:''}
+      ${!isQuiz && !st.solved && st.mistakes>0 && st.mistakes<3 ? `<p class="target">Opsi "Tampilkan jawaban" terbuka setelah 3 kesalahan di level ini (${st.mistakes}/3).</p>`:''}
+    </article>
+    <div class="desk">
+      ${work}
+      <details class="panel" ${L.erd?'open':''}>
+        <summary>Diagram relasi database (ERD)</summary>
+        <div class="erd">${erdSVG()}</div>
+        <p class="legend"><b class="pk">PK</b> primary key · <b class="fk">FK</b> foreign key · <b class="fk">UQ</b> unique · garis menghubungkan FK ke PK yang dirujuk · <b>1</b> dan <b>N</b> menandai sisi satu dan sisi banyak.</p>
+      </details>
+    </div>
+  </div>
+  ${notebookHTML()}`;
+
+  const map=document.getElementById('map'); if(map) map.addEventListener('toggle',()=>{ S.mapOpen=map.open; save(); });
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>goto(+b.dataset.go));
+  const te=document.getElementById('toEval'); if(te) te.onclick=finish;
+  const ts=document.getElementById('toSbx'); if(ts) ts.onclick=openSandbox;
+  const er=document.getElementById('endRv'); if(er) er.onclick=endReview;
+  const h=document.getElementById('hint'); if(h) h.onclick=useHint;
+  const rv=document.getElementById('reveal'); if(rv) rv.onclick=reveal;
+  const nx=document.getElementById('next'); if(nx){ nx.onclick=nextLevel; if(justRan) nx.focus({preventScroll:true}); }
+  document.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>pick(+b.dataset.opt));
+  const ta=document.getElementById('sql');
+  if(ta){
+    ta.addEventListener('keydown', e=>{
+      if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); submit(); }
+      if(e.key==='Tab' && !e.shiftKey){ e.preventDefault(); insert('  '); }
+    });
+    ta.addEventListener('input', ()=>{ S.drafts[draftKey()]=ta.value; save(); });
+    document.getElementById('run').onclick=submit;
+    document.querySelectorAll('[data-ins]').forEach(b=>b.onclick=()=>insert(b.dataset.ins));
+  }
+}
+
+function solutionHTML(L){
+  const sols=[L.solution].concat(L.alt||[]);
+  return `<details class="sol"><summary>Pembahasan: kunci jawaban${sols.length>1?' dan cara lain':''}</summary>
+    ${sols.map((q,i)=>`<span class="label">${i?'Cara lain yang juga benar':'Kunci jawaban'}</span><pre>${esc(q)}</pre>`).join('')}
+    <p class="target">Jawabanmu tidak harus sama persis. Yang diperiksa adalah hasilnya${(L.require||[]).length?' dan konsep yang diminta':''}.</p></details>`;
+}
+
+/* ===================== SANDBOX ===================== */
+let SBX=null, sbxLast=null;
+function sbxReset(){ if(SBX) SBX.close(); SBX=new SQL.Database(); SBX.run('PRAGMA foreign_keys = ON;'); SBX.run(SEED); SBX.run(ARSIP); sbxLast=null; }
+function openSandbox(){ S.prevScreen=S.screen==='sandbox'?S.prevScreen:S.screen; S.screen='sandbox'; if(!SBX) sbxReset(); save(); render(); window.scrollTo({top:0}); }
+function sbxTables(){
+  const r=SBX.exec("SELECT name, type FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY type, name");
+  if(!r.length) return [];
+  return r[0].values.map(([n,t])=>{ const c=SBX.exec(`SELECT name, pk FROM pragma_table_info('${n.replace(/'/g,"''")}')`); return [n, c.length?c[0].values.map(([cn,pk])=>[cn, pk?'P':'']):[], t]; });
+}
+function sbxRun(){
+  const ta=document.getElementById('sbx'); const q=ta.value.trim(); if(!q) return;
+  S.sbxDraft=ta.value; save();
+  try{ const r=SBX.exec(q); sbxLast={ok:true, res:r, ch:SBX.getRowsModified()}; }
+  catch(e){ const m=String(e.message||e); sbxLast={ok:false, err:m, cat:classifyError(m)}; }
+  renderSandbox();
+}
+function renderSandbox(){
+  const tabs=sbxTables();
+  let out='';
+  if(sbxLast){
+    if(!sbxLast.ok){ const c=CATS[sbxLast.cat]; out=`<div class="feedback bad"><div class="head"><span class="cat">ERROR</span>${esc(c.label)}</div><p>${esc(c.tip)}</p><p class="raw">Pesan SQLite: ${esc(sbxLast.err)}</p></div>`; }
+    else if(!sbxLast.res.length) out=`<div class="feedback good"><div class="head"><span class="cat">OK</span>Perintah dijalankan.</div><p>${sbxLast.ch} baris berubah.</p></div>`;
+    else out=sbxLast.res.map((r,i)=>`<span class="label">Hasil ${sbxLast.res.length>1?'#'+(i+1)+' · ':''}${r.values.length} baris</span><div class="result">${tableHTML(r)}</div>`).join('');
+  }
+  app().innerHTML=`
+  <div class="top"><div><span class="case-no">SANDBOX · TIDAK DINILAI</span><h1>Kasus Kopi Hilang</h1></div>
+    <div class="meta"><button class="btn sm" id="sbxBack">← Kembali</button></div></div>
+  <div class="game">
+    <article class="folder" data-tab="SANDBOX">
+      <h2>Ruang coba bebas</h2>
+      <p>Tulis query apa saja ke salinan database kasus. Di sini kamu boleh membuat, mengubah, dan menghapus apa pun. Tidak ada yang dinilai dan tidak ada yang dicatat sebagai kesalahan.</p>
+      <div class="concept"><span class="label">Ide untuk dicoba</span><pre>SELECT * FROM arsip_kendaraan;
+SELECT jenis, COUNT(*) FROM kendaraan GROUP BY jenis;
+CREATE TABLE coba (id INTEGER PRIMARY KEY, isi TEXT);
+INSERT INTO coba (isi) VALUES ('halo');
+SELECT * FROM coba;</pre></div>
+      <p class="target">Perubahan bertahan selama halaman terbuka. Tekan "Reset database" untuk kembali ke data awal.</p>
+    </article>
+    <div class="desk">
+      <section class="panel">
+        <span class="label">Tabel & view saat ini · klik untuk menyisipkan</span>
+        <div class="schema">${tabs.map(([t,cs,ty])=>`<div class="tbl"><button data-ins="${esc(t)}">${esc(t)}</button>${ty==='view'?' <span class="target">view</span>':''}<div class="cols">${cs.map(([c,k])=>`<button class="${k==='P'?'k':''}" data-ins="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>`).join('')}</div>
+      </section>
+      <section class="panel">
+        <label class="label" for="sbx">Query bebas</label>
+        <textarea id="sbx" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="SELECT …">${esc(S.sbxDraft||'')}</textarea>
+        <div class="row"><button class="btn red" id="sbxRun">Jalankan <span class="kbd">Ctrl+Enter</span></button><button class="btn ghost" id="sbxReset">Reset database</button></div>
+        ${out}
+      </section>
+      <details class="panel"><summary>Diagram relasi database (ERD)</summary><div class="erd">${erdSVG()}</div></details>
+    </div>
+  </div>`;
+  const ta=document.getElementById('sbx');
+  ta.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); sbxRun(); } if(e.key==='Tab' && !e.shiftKey){ e.preventDefault(); const s0=ta.selectionStart; ta.value=ta.value.slice(0,s0)+'  '+ta.value.slice(ta.selectionEnd); ta.selectionStart=ta.selectionEnd=s0+2; } });
+  ta.addEventListener('input', ()=>{ S.sbxDraft=ta.value; save(); });
+  document.getElementById('sbxRun').onclick=sbxRun;
+  document.getElementById('sbxReset').onclick=()=>{ sbxReset(); renderSandbox(); };
+  document.getElementById('sbxBack').onclick=()=>{ S.screen=S.prevScreen||'cover'; if(S.screen==='sandbox') S.screen='cover'; save(); render(); };
+  document.querySelectorAll('[data-ins]').forEach(b=>b.onclick=()=>{ const s0=ta.selectionStart; const t=b.dataset.ins; ta.value=ta.value.slice(0,s0)+t+ta.value.slice(ta.selectionEnd); ta.selectionStart=ta.selectionEnd=s0+t.length; ta.focus(); });
+}
+
+function notebookHTML(){
+  const list=[...S.mistakes].reverse();
+  return `<section class="notebook" aria-live="polite">
+    <h3>Buku catatan kesalahan <span class="count">${S.mistakes.length} tercatat</span></h3>
+    ${list.length?`<ul class="mlist">${list.map(m=>`<li><span class="lv">L${m.lvl+1}${m.review?'↻':''}</span><span><b>${esc(CATS[m.cat].label)}</b>${m.detail?` · ${esc(m.detail)}`:''}</span>${m.cat!=='teori'?`<span class="q">${esc(m.q.replace(/\s+/g,' '))}</span>`:''}</li>`).join('')}</ul>`
+      :'<p class="target">Belum ada kesalahan. Setiap jawaban atau query yang salah akan tercatat di sini beserta penyebabnya.</p>'}
+  </section>`;
+}
+
+/* ===================== EVALUASI ===================== */
+function evaluation(){
+  const st=S.stats;
+  const scores=st.map(s => !s.solved ? 0 : s.revealed ? 20 : Math.max(30, 100 - s.mistakes*15 - s.hints*10));
+  const total=scores.reduce((a,b)=>a+b,0), max=LEVELS.length*100, pct=Math.round(total/max*100);
+  const solved=st.filter(s=>s.solved).length;
+  const grade = pct>=90?'A':pct>=78?'B':pct>=62?'C':pct>=45?'D':'E';
+  const title = {A:'Detektif Kepala',B:'Penyidik Andal',C:'Penyidik Muda',D:'Analis Magang',E:'Kadet Data'}[grade];
+  const note = solved<LEVELS.length
+    ? `Kamu sudah menyelesaikan ${solved} dari ${LEVELS.length} level. Level yang belum dikerjakan bernilai 0, jadi nilai ini akan naik saat kamu melanjutkan.`
+    : {A:'Query-mu rapi dan tepat sasaran, dan konsep database-mu kuat. Kamu siap untuk window function, index, dan transaksi.',
+       B:'Dasar SQL dan database-mu kuat. Ada beberapa pola kesalahan kecil yang masih berulang; lihat saran di bawah.',
+       C:'Alur berpikirmu sudah benar, tapi beberapa konsep masih perlu dilatih agar tidak tersandung lagi.',
+       D:'Seluruh materi selesai dengan cukup banyak bantuan. Ulangi bab yang berwarna merah untuk menguatkan dasar.',
+       E:'Ini baru permulaan. Fokus pada Bab 1–3 dulu, lalu main lagi.'}[grade];
+  const MS=S.mistakes.filter(m=>!m.review);
+  const counts={}; MS.forEach(m=>counts[m.cat]=(counts[m.cat]||0)+1);
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const maxC=sorted.length?sorted[0][1]:1;
+  const chap=CHAPTERS.map((c,ci)=>{ const idx=LEVELS.map((l,i)=>i).filter(i=>LEVELS[i].ch===ci);
+    const p=idx.reduce((a,i)=>a+scores[i],0)/(idx.length*100)*100; const d=idx.filter(i=>st[i].solved).length;
+    return {n:c.n, p:Math.round(p), d, t:idx.length}; });
+  const recs=[];
+  const teoriTopics=[...new Set(MS.filter(m=>m.cat==='teori').map(m=>LEVELS[m.lvl].concept))];
+  sorted.slice(0,4).forEach(([c])=>{
+    if(c==='teori') recs.push(`Baca ulang kotak konsep untuk topik teori: ${teoriTopics.join(', ')}. Coba jelaskan dengan kata-katamu sendiri memakai contoh tabel kasus ini.`);
+    else recs.push(CATS[c].rec);
+  });
+  const weakCh=chap.filter(c=>c.d>0 && c.p<60).map(c=>c.n);
+  if(weakCh.length) recs.push(`Ulangi bab ${weakCh.join(', ')} dan tulis setiap query dari nol tanpa petunjuk.`);
+  const unfinished=chap.filter(c=>c.d<c.t).map(c=>c.n);
+  if(unfinished.length) recs.push(`Selesaikan bab yang belum tuntas: ${unfinished.join(', ')}.`);
+  if(!recs.length) recs.push('Tidak ada pola kesalahan. Tantang dirimu dengan window function (ROW_NUMBER, RANK), CTE (WITH), dan index.');
+  const firstTry=st.filter(s=>s.firstTry).length;
+  const totalMs=(S.finishedAt||Date.now())-(S.startedAt||Date.now());
+  const hints=st.reduce((a,s)=>a+s.hints,0);
+  const examIdx=LEVELS.map((l,i)=>i).filter(i=>LEVELS[i].exam);
+  const examPct=Math.round(examIdx.reduce((a,i)=>a+scores[i],0)/(examIdx.length*100)*100);
+  const examDone=examIdx.filter(i=>st[i].solved).length;
+  const weak=LEVELS.map((l,i)=>i).filter(i=>!LEVELS[i].exam && (st[i].revealed || st[i].mistakes>=2));
+  return {scores,total,max,pct,grade,title,note,sorted,maxC,chap,recs,firstTry,totalMs,hints,solved,MS,examPct,examDone,examN:examIdx.length,weak};
+}
+
+function renderEval(){
+  const v=evaluation();
+  const statusOf = s => !s.solved ? '<span class="st-no">Belum</span>' : s.revealed ? '<span class="st-help">Dibantu</span>' : '<span class="st-ok">Selesai</span>';
+  const col = p => p>=75?'g':p>=50?'y':'r';
+  const culprit = S.stats[LEVELS.findIndex(l=>l.concept==='JOIN 3 tabel')].solved;
+  app().innerHTML=`
+  <div class="top"><div><span class="case-no">BERKAS 07 · LAPORAN EVALUASI</span><h1>Kasus Kopi Hilang</h1></div>
+    <div class="meta"><button class="btn ghost sm" id="evSbx">Sandbox</button><button class="btn sm" id="back">${v.solved<LEVELS.length?'Lanjutkan belajar':'Kembali ke level'}</button></div></div>
+  <div class="eval">
+    <section class="verdict">
+      <div class="grade" aria-label="Nilai ${v.grade}">${v.grade}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <span class="label">Pangkat penyelidik</span><h2>${v.title}</h2><p>${esc(v.note)}</p>
+        ${culprit?'<p class="target">Pelaku: <b>Stevi Rumengan</b>, pikap hijau DB 8344 KC, masuk gudang 21.40–23.55, menjual 40 karung di bawah harga pasar.</p>':''}
+      </div>
+    </section>
+    <div class="stats">
+      <div class="stat"><span class="label">Skor</span><div class="v">${v.pct}%</div><span class="target">${v.total} dari ${v.max} poin</span></div>
+      <div class="stat"><span class="label">Level selesai</span><div class="v">${v.solved}/${LEVELS.length}</div><span class="target">${v.firstTry} tepat sekali coba</span></div>
+      <div class="stat"><span class="label">Kesalahan</span><div class="v">${v.MS.length}</div><span class="target">${v.sorted.length} jenis berbeda · ${v.hints} petunjuk</span></div>
+      <div class="stat"><span class="label">Nilai ujian akhir</span><div class="v">${v.examDone?v.examPct+'%':'–'}</div><span class="target">${v.examDone}/${v.examN} soal · waktu total ${fmtTime(v.totalMs)}</span></div>
+    </div>
+    <div class="grid2">
+      <section class="panel">
+        <h3 style="font-size:1.2rem">Penguasaan per bab</h3>
+        <div class="bars">${v.chap.map(c=>`<div class="bar"><span>${esc(c.n)} <span class="target">(${c.d}/${c.t})</span></span><div class="track2"><div class="fill ${col(c.p)}" style="width:${c.p}%"></div></div><span class="num">${c.p}%</span></div>`).join('')}</div>
+        <p class="target">Hijau ≥ 75% · kuning 50–74% · merah di bawah 50%.</p>
+      </section>
+      <section class="panel">
+        <h3 style="font-size:1.2rem">Pola kesalahanmu</h3>
+        ${v.sorted.length?`<div class="bars">${v.sorted.map(([c,n],i)=>`<div class="bar ${i===0?'top':''}"><span>${esc(CATS[c].label)}</span><div class="track2"><div class="fill" style="width:${n/v.maxC*100}%"></div></div><span class="num">${n}</span></div>`).join('')}</div>`
+          :'<p class="target">Tidak ada kesalahan sama sekali.</p>'}
+      </section>
+    </div>
+    <section class="panel">
+      <h3 style="font-size:1.2rem">Saran latihan berikutnya</h3>
+      <ol class="recs">${v.recs.map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
+      ${v.weak.length?`<div class="row"><button class="btn" id="review">Latihan ulang ${v.weak.length} level yang lemah</button><span class="target">Level dengan 2+ kesalahan atau yang jawabannya dibuka, dikerjakan ulang dari nol.</span></div>`:''}
+      ${S.lastReview?(()=>{ const q=S.lastReview.queue, rs=S.lastReview.st; const ok=q.filter(i=>rs[i].solved && !rs[i].revealed && rs[i].mistakes===0).length; const done=q.filter(i=>rs[i].solved).length;
+        return `<div class="concept"><span class="label">Hasil latihan ulang terakhir</span><p>${done} dari ${q.length} level diselesaikan, ${ok} di antaranya langsung benar tanpa kesalahan.</p>
+        <p class="target">${q.map(i=>`L${i+1} ${esc(LEVELS[i].concept)}: ${rs[i].solved?(rs[i].mistakes?rs[i].mistakes+' salah':'langsung benar'):'belum selesai'}`).join(' · ')}</p></div>`; })():''}
+    </section>
+    <section class="panel">
+      <h3 style="font-size:1.2rem">Rincian per level</h3>
+      <div class="result" style="max-height:480px"><table>
+        <thead><tr><th>Lvl</th><th>Bab</th><th>Konsep</th><th>Percobaan</th><th>Salah</th><th>Petunjuk</th><th>Waktu</th><th>Poin</th><th>Status</th></tr></thead>
+        <tbody>${S.stats.map((s,i)=>`<tr><td>${i+1}</td><td>${LEVELS[i].ch+1}</td><td>${esc(LEVELS[i].concept)}</td><td>${s.attempts}</td><td>${s.mistakes}</td><td>${s.hints}</td><td>${s.solved?fmtTime(s.ms):'–'}</td><td>${v.scores[i]}</td><td>${statusOf(s)}</td></tr>`).join('')}</tbody>
+      </table></div>
+      <p class="target">Poin per level: 100, dikurangi 15 tiap kesalahan dan 10 tiap petunjuk (minimal 30). Level yang jawabannya ditampilkan bernilai 20, dan level yang belum selesai bernilai 0.</p>
+    </section>
+    <section class="panel">
+      ${S.mistakes.length?`<details>
+        <summary>Log lengkap ${S.mistakes.length} kesalahan (↻ = saat latihan ulang)</summary>
+        <div class="result" style="margin-top:12px;max-height:420px"><table>
+          <thead><tr><th>Lvl</th><th>Jenis</th><th>Jawaban / query</th><th>Keterangan</th></tr></thead>
+          <tbody>${S.mistakes.map(m=>`<tr><td>${m.lvl+1}${m.review?'↻':''}</td><td>${esc(CATS[m.cat].label)}</td><td class="mono">${esc(m.q.replace(/\s+/g,' '))}</td><td>${esc(m.detail||m.raw||'')}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </details>`:''}
+      <div class="row">
+        <button class="btn red" id="again">Main lagi dari awal</button>
+        <button class="btn ghost" id="copy">Salin ringkasan evaluasi</button>
+        <span class="target" id="copied" aria-live="polite"></span>
+      </div>
+    </section>
+    ${promoHTML()}
+  </div>`;
+  document.getElementById('again').onclick=startGame;
+  const rvb=document.getElementById('review'); if(rvb) rvb.onclick=()=>startReview(v.weak);
+  document.getElementById('evSbx').onclick=openSandbox;
+  document.getElementById('back').onclick=()=>{ S.screen='game'; S.finishedAt=null; const i=S.stats.findIndex(s=>!s.solved); goto(i>-1?i:S.lvl); };
+  document.getElementById('copy').onclick=()=>{
+    const txt=`Kasus Kopi Hilang — Evaluasi Belajar SQL\nNilai: ${v.grade} (${v.title}), skor ${v.pct}%\nLevel selesai: ${v.solved}/${LEVELS.length} · Kesalahan: ${v.MS.length} · Nilai ujian: ${v.examDone?v.examPct+'%':'-'} · Tepat sekali coba: ${v.firstTry} · Petunjuk: ${v.hints} · Waktu: ${fmtTime(v.totalMs)}\n\nPenguasaan per bab:\n${v.chap.map(c=>`- ${c.n}: ${c.p}% (${c.d}/${c.t})`).join('\n')}\n\nPola kesalahan:\n${v.sorted.map(([c,n])=>`- ${CATS[c].label}: ${n}`).join('\n')||'- tidak ada'}\n\nSaran:\n${v.recs.map((r,i)=>`${i+1}. ${r}`).join('\n')}`;
+    const done=ok=>document.getElementById('copied').textContent = ok?'Tersalin.':'Gagal menyalin otomatis.';
+    try{ navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false)); }catch(e){ done(false); }
+  };
+}
+
+function render(justRan){
+  renderCredits();
+  if(S.screen==='cover') renderCover();
+  else if(S.screen==='game') renderGame(justRan);
+  else if(S.screen==='sandbox'){ if(!SBX) sbxReset(); renderSandbox(); }
+  else renderEval();
+}
+
+/* ===================== BOOT ===================== */
+window.claude?.hot?.snapshot?.(() => S);
+function boot(data){
+  if(data && data.screen && data.stats && data.stats.length===LEVELS.length) S=data;
+  if(typeof initSqlJs!=='function'){ app().innerHTML='<div class="loading">Mesin SQL gagal dimuat. Muat ulang halaman ini.</div>'; return; }
+  initSqlJs().then(lib=>{
+    SQL=lib;
+    EXP=LEVELS.map(L=>{ const t=L.type||'query'; if(t==='quiz'||t==='error') return null; const r=exec(L.solution,L); return (t==='dml'||t==='ddl') ? r.checks : r.res; });
+    render();
+  }).catch(()=>{ app().innerHTML='<div class="loading">Mesin SQL gagal dimuat. Muat ulang halaman ini.</div>'; });
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
